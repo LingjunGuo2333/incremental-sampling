@@ -1,4 +1,4 @@
-%% tunable parameter.
+%% tunable parameter, the y-axis is log-scaled
 M_list = [1e1, 1e4];
 N_list = [1e4, 1e7];
 c_o = 1e0;
@@ -15,7 +15,7 @@ p_0 = @(a) max(1/min( alpha^2/((2+c(a))^2*tau^2*C*n),beta^2/((1+c(a))^2*tau^4*C*
 %% main algorithm and plot
 figure(2)
 figures = tiledlayout(2,2);
-title(figures,"comparison of grad eval, $\mathcal{O}=$" + num2str(c_o),'interpreter','latex')
+title(figures,"comparison of log(grad eval), $\mathcal{O}=$" + num2str(c_o),'interpreter','latex')
 for i=1:2
     for j=1:2
         M     = M_list(i);    N=N_list(j) ;
@@ -37,7 +37,7 @@ for i=1:2
         hold on
         fplot(@(a) f_anm(a),[llimit rnormal],'r','LineWidth',2.0, 'DisplayName','ANM for N data')
         xlabel('$a$','interpreter','latex')
-        ylabel('number of grad eval')
+        ylabel('$\log$ number of grad eval','interpreter','latex')
         title("$M=$"+ num2str(M,'%1.1e') + ...
            ",$N=$"+ num2str(N,'%10.1e'),'interpreter','latex')
         legend('Interpreter','latex','Location','southeast')

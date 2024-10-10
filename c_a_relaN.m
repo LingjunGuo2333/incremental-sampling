@@ -1,7 +1,8 @@
-%% tunable parameter,
+%% tunable parameter,the y-axis is not log-scaled
 M_list = [1e0, 1e10]; % Lipschtiz gradient constant
 N_list = {"1", 1e10}; % number of samples, "1":1+p_0; 1e10:1e10*p_0
 c_o = 1e4;            % size of \Ocal
+
 llimit = 0.5;         % for plotting. a-axis left limit s.t. a*p_0>=1.
 rsmall = .5000001; rnormal = 1; % for plotting. a-axis right limit
 %% parameters set as constant
