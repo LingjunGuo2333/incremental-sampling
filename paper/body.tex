@@ -1,0 +1,1050 @@
+%*********
+% Section
+%*********
+\section{Introduction}\label{sec.introduction}
+
+Equality-constrained optimization problems arise...
+
+\textcolor{blue}{Lingjun}: Add a citation to the paper for the unconstrained setting.
+The unconstrained progressive sampling paper is \cite{mokhtari2019efficient}.
+%************
+% Subsection
+%************
+\subsection{Contributions}
+
+Our contributions relate \dots
+
+%************
+% Subsection
+%************
+\subsection{Notation}
+
+We use $\R{}$ to denote the set of real numbers, $\R{}_{\geq r}$ (resp.,~$\R{}_{>r}$) to denote the set of real numbers greater than or equal to (resp.,~greater than) $r \in \R{}$, $\R{n}$ to denote the set of $n$-dimensional real vectors, and $\R{m \times n}$ to denote the set of $m$-by-$n$-dimensional real matrices.  We denote the set of nonnegative integers as $\N{} := \{0,1,2,\dots\}$, and, for any integer $N \geq 1$, we use $[N]$ to denote the set $\{1, \dots, N\}$.
+
+For any finite set $\Scal$, we use $|\Scal|$ to denote its cardinality.  We consider all vector norms to be Euclidean, i.e., we let $\|\cdot\| := \|\cdot\|_2$, unless otherwise specified.  Similarly, we use $\|\cdot\|$ to denote the spectral norm of any matrix input.
+
+For any matrix $A \in \R{m \times n}$, we use $\sigma_i(A)$ to denote its $i$th largest singular value.  Given any such $A$, we use $\Null(A)$ to denote its null space, i.e., $\{d \in \R{n} : Ad = 0\}$.  Assuming $B \in \R{n \times m}$ has full column rank, we use $B^\dag$ to denote its pseudoinverse, i.e., $B^\dag := (B^TB)^{-1}B^T$.  For any subspace $\Xcal \subseteq \R{n}$ and point $x \in \R{n}$, we denote the projection of $x$ onto $\Xcal$ as $\proj_\Xcal(x) := \arg\min_{\xbar \in \Xcal} \|\xbar - x\|$.  Given $B \in \R{n \times m}$ with full column rank, we use $\Rcal(B) := BB^\dag$ and $\Ncal(B) = I - \Rcal(B)$ to denote projection matrices onto the span of the columns of $B$ and the null space of $B$, respectively.
+
+%************
+% Subsection
+%************
+\subsection{Organization}
+
+In \S\ref{sec.analysis}, \dots
+
+%*********
+% Section
+%*********
+\section{Algorithm}\label{sec.algorithm}
+
+Our proposed algorithm is designed to solve a sample average approximation (SAA) of the continuous nonlinear-equality-constrained problem
+\bequation\label{prob.expected}
+  \min_{x \in \R{n}}\ f(x)\ \st\ \cbar(x) = 0,
+\end{equation}
+where the objective and constraint functions, i.e., $f : \R{n} \to \R{}$ and $\cbar : \R{n} \to \R{m}$, respectively, are continuously differentiable, $m \leq n$, and the constraint function $c$ is defined by an expectation.  Formally, with respect to a random variable $\omega$ defined by a probability space $(\Omega,\Fcal,\P)$, the expectation function $\E$ defined by $\P$, and $\Cbar : \R{n} \times \Omega \to \R{m}$, the constraint function $\cbar$ is defined by $\cbar(x) = \E[\Cbar(x,\omega)]$ for all $x \in \R{n}$.  The SAA of problem~\eqref{prob.expected} that our algorithm is designed to solve is defined with respect to a sample of $N \in \N{}$ realizations of the random variable $\omega$, say, $\{\omega_i\}_{i\in[N]}$.  Defining the SAA constraint function $c : \R{n} \to \R{m}$ for all $x \in \R{n}$ by
+\bequationNN
+  c(x) = \frac1N \sum_{i=1}^N c_i(x),\ \ \text{where}\ \ c_i(x) \equiv \Cbar(x,\omega_i)\ \ \text{for all}\ \ i \in [N],
+\eequationNN
+the problem that our algorithm is designed to solve is that given by
+\bequation\label{prob.opt.N}
+  \min_{x \in \R{n}}\ f(x)\ \st\ c(x) = 0.
+\eequation
+Under mild assumptions about $c$ and an assumption that $N$ is sufficiently large, a point that is approximately stationary for problem~\eqref{prob.opt.N} can be shown to the approximately stationary for problem~\eqref{prob.expected}, at least with high probability.  We leave a formal statement and proof of this fact until the end of our analysis.  Until that time, we focus on our proposed algorithm and our analysis of it for solving problem~\eqref{prob.opt.N}.
+
+The main idea of our proposed algorithm for solving problem~\eqref{prob.opt.N} is to generate a sequence of iterates, each of which is a stationary point (at least approximately) with respect to a subsampled problem involving only a subset $\Scal \subseteq [N]$ of constraint function terms.  For any such $\Scal$, an approximation of problem~\eqref{prob.opt.N} is given by
+\bequation\label{prob.opt.S}
+  \min_{x \in \R{n}}\ f(x)\ \st\ c_\Scal(x) = 0,\ \ \text{where}\ \ c_\Scal(x) = \frac{1}{|\Scal|} \sum_{i\in\Scal} c_i(x).
+\end{equation}
+The primary benefit of considering \eqref{prob.opt.S} for $\Scal \subseteq [N]$, rather than \eqref{prob.opt.N} directly, is that any evaluation of a constraint or constraint Jacobian value requires computing a sum of $|\Scal| \leq N$ terms, as opposed to $N$ terms.  Also, under assumptions about the constraint functions that are reasonable for many real-world problems of interest, we show in this paper that, by starting with an approximate stationary point for problem~\eqref{prob.opt.S} and aiming to solve a subsequent instance of \eqref{prob.opt.S} with respect to a sample set $\overline\Scal \supseteq \Scal$, our proposed algorithm can obtain an approximate stationary point for the subsequent instance with lower sample complexity than if the problem with the larger sample set were solved directly.  Overall, we show that---at least once the sample sets become sufficiently large relative to $N$---a sufficiently approximate stationary point of problem~\eqref{prob.opt.N} can be obtained more efficiently through progressive sampling than by tackling the problem directly.
+
+For use in our proposed algorithm and our analysis of it, let us introduce stationarity conditions for problem~\eqref{prob.opt.S}, which also represent stationarity conditions for problem~\eqref{prob.opt.N} in the particular case when $\Scal = [N]$.  The Lagrangian of problem~\eqref{prob.opt.S} is $L_\Scal : \R{n} \times \R{m} \to \R{}$ defined for all $(x,y) \in \R{n} \times \R{m}$ by
+\bequationNN
+  L_\Scal(x,y) = f(x) + c_\Scal(x)^Ty = f(x) + \frac{1}{|\Scal|} \sum_{i \in \Scal} c_i(x)^Ty,
+\eequationNN
+where $y \in \R{m}$ is referred to as a vector of Lagrange multipliers or dual variables.  Second-order necessary conditions for optimality for \eqref{prob.opt.S} can then be stated as
+\bsubequations\label{eq.soc.S}
+  \begin{align}
+    \nabla_x L_\Scal(x,y) &= 0 \label{eq.soc.S.1} \\ \text{and}\ \ 
+    d^T \nabla_{xx}^2 L_\Scal(x,y)d &\geq 0\ \ \text{for all}\ \ d \in \Null(\nabla c_\Scal(x)^T). \label{eq.soc.S.2}
+  \end{align}
+\esubequations
+We refer to any point $(x,y)$ satisfying \eqref{eq.soc.S.1} as a first-order stationary point with respect to problem~\eqref{prob.opt.S}, and we refer to any point satisfying both \eqref{eq.soc.S.1} and \eqref{eq.soc.S.2} (i.e., satisfying \eqref{eq.soc.S}) as a second-order stationary point with respect to problem~\eqref{prob.opt.S}.  In addition, consistent with the literature on worst-case complexity bounds for nonconvex smooth optimization, we say that a point $(x,y)$ is $(\epsilon,\varepsilon)$-stationary with respect to problem~\eqref{prob.opt.S} for some $(\epsilon,\varepsilon) \in \R{}_{>0} \times \R{}_{>0}$ if and only if
+\bsubequations\label{eq.soc.S.approx}
+  \begin{align}
+    \|\nabla_x L_\Scal(x,y)\| &\leq \epsilon \label{eq.soc.S.approx.1} \\ \text{and}\ \ 
+    d^T \nabla_{xx}^2 L_\Scal(x,y)d &\geq -\varepsilon\ \ \text{for all}\ \ d \in \Null(\nabla c_\Scal(x)^T). \label{eq.soc.S.approx.2}
+  \end{align}
+\esubequations
+
+Generally speaking, an algorithm for solving \eqref{prob.opt.S} can be a \emph{primal} method that might only generate a sequence of primal iterates $\{x_k\}$, or it can be a \emph{primal-dual} method that generates a sequence of primal and dual iterate pairs $\{(x_k,y_k)\}$.  For an application of our proposed algorithm, either type of method can be employed, but for certain results in our analysis we refer to properties of \emph{least-square multipliers} corresponding to a given primal point $x \in \R{n}$.  Assuming that the Jacobian of~$c_\Scal$ at~$x$, namely, $\nabla c_\Scal(x)^T$, has full row rank, the least-squares multipliers with respect to $x$ are given by $y(x) \in \R{m}$ that minimizes $\|\nabla_x L(x,\cdot)\|^2$, which is given by
+\begin{equation}\label{eq.lsm}
+  y(x) = - (\nabla c_\Scal(x)^T \nabla c_\Scal(x))^{-1} \nabla c_\Scal(x)^T \nabla f(x) = - \nabla c_\Scal(x)^\dag \nabla f(x).
+\end{equation}
+
+Our proposed method is stated as Algorithm~\ref{alg.pcsm} below.
+
+\balgorithm
+  \caption{Progressive Constraint-Sampling Method (PCSM) for \eqref{prob.opt.N}}
+  \label{alg.pcsm}
+  \balgorithmic[1]
+    \Require Initial sample set size $p_1 \in [N]$, initial point $x_0 \in \R{n}$, maximum outer iteration index $K = \lceil \log_2 \frac{N}{p_1} \rceil$, and subproblem tolerances $\{(\epsilon_k,\varepsilon_k)\}_{k=1}^K \subset \R{}_{>0}$
+    \State set $\Scal_0 \gets \emptyset$
+    \For {$k \in [K]$}
+      \State choose $\Scal_k \supseteq \Scal_{k-1}$ such that $|\Scal_k| = p_k$
+      \State using $x_{k-1}$ as a starting point, employ an algorithm to solve \eqref{prob.opt.S}, terminating once a primal iterate $x_k$ has been obtained such that $(x_k,y(x_k))$ (see \eqref{eq.lsm}) is $(\epsilon_k,\varepsilon_k)$-stationary with respect to problem~\eqref{prob.opt.S} for $\Scal = \Scal_k$
+      \State set $p_{k+1} \gets \min\{2p_k, N\}$
+    \EndFor
+    \State \Return $(x_K,y(x_K))$, which is $(\epsilon_K,\varepsilon_K)$-stationary with respect to \eqref{prob.opt.N}
+  \ealgorithmic
+\ealgorithm
+
+%*********
+% Section
+%*********
+\section{Analysis}\label{sec.analysis}
+
+FEC: Moved assumption from earlier....
+\bassumption\label{ass.nondegeneracy}
+  For all $N\in \Nmbb$, there exists a sample size $p_N\in[N]$, such that for all $(x,\Scal)\subseteq\R{n}\times[N]$ with $|\Scal|\ge p_N$, the Jacobian $\nabla c_{\Scal}(x)^T$ is nondegenerate, i.e. $\rank(\nabla c_{\Scal}(x)^T)=m$.
+\eassumption
+
+\bassumption
+ \label{ass.boundness}
+ There exist constants $(
+  \sigma_{c}^{\max},\sigma_f^{\max}, 
+\sigma_c^{\min},\lambda_c^{\max}
+ ,\lambda_f^{\max}
+ )\in\Rmbb_{>0}^5$ 
+ %with $\sigma_c^{\min}\le\sigma_c^{\max}$, 
+, such that for all $(j,x)\in[m]\times\R{n}$, the following hold
+ \begin{itemize}
+ 	\item[(1).]
+ 	We have $\|\nabla c(x)\|_2\le\sigma_c^{\max}$ and $\|\nabla f(x)\|_2\le\sigma_f^{\max}$. Moreover, the smallest singular value of $\nabla c(x)$,i.e. $\sigma_m(\nabla c (x))$ satisfies $\sigma_m(\nabla c (x))\ge \sigma_c^{\min}$. 
+ 	\item[(2).] 
+ 	We have $\|\nabla^2 f(x)\|_2\le\lambda_f^{\max}$. In addition, we have $\|\nabla^2 c^j(x)\|_2\le\lambda_c^{\max}$ where the function $c^j$ is the $j$th element of $c$. %In addition, we have $\|\nabla^2 f(x)\|_2\le\lambda_f^{\max}$.
+ \end{itemize} 
+\eassumption
+  In addition to the above assumptions for the average constraint function $c$, we also make the following assumptions regarding individual sample function $c_i$.
+  
+  \bassumption
+ \label{ass.bounded.distribute}
+ For all $x\in\R{n}$, the Jacobian $\nabla c(x)^T$ has full column rank. In addition, there exist positive constants $(
+\theta_J,\nu_J,\mu_H
+ )\in\Rmbb_{>0}^3$, 
+ %with $\sigma_c^{\min}\le\sigma_c^{\max}$, 
+ such that the following hold
+ \begin{itemize}
+ 	\item[(1).]
+ 	For any $x\in\R{n}$, we have
+ 	\bequationNN
+ 	\baligned
+ 	&\frac{1}{N}\sum_{i=1}^N\left\|\nabla c_i(x)^T\Rcal\left(\nabla c(x)\right) -\nabla c(x)^T\right\|_2^2\le \theta_J\|\nabla c(x)^T\|_2^2\text{, and }\\
+ 	&\frac{1}{N}\sum_{i=1}^N\left\|\nabla c_i(x)^T\Ncal\left(\nabla c (x)\right)\right\|_2^2\le \nu_J\|\nabla c (x)^T\|_2^2.
+ 	\ealigned
+ 	\eequationNN
+ 	\item[(2).] 
+ 	For all $(j,x)\in[m]\times\R{n}$, 
+ 	we have  
+ 	\bequationNN
+ 	\baligned
+ 	&\frac{1}{N}\sum_{i=1}^N\left\|\nabla^2 c^j_i(x)-\nabla^2 c^j(x)\right\|_2^2\le \mu_H \|\nabla^2 c^j(x)\|_2^2.
+ 	 	\ealigned
+ 	\eequationNN
+  \end{itemize} 
+\eassumption
+  
+  We make the following two definitions.
+  \begin{definition}
+\label{def.constraint.morse}
+For any $(\alpha,\beta)\in\R{}_{>0}\times\R{}_{>0}$, problem $\{\min_x\ f(x),\st c(x)=0\}$ is $(\alpha,\beta)$-morse, if and only if, for any $x\in\R{n}$ there exists a $y\in\R{m}$, such that
+	when $(x,y)$ satisfies $\|\nabla_x L(x,y)\|_2\le\alpha$, we have $|d^T\nabla^2_{xx}L(x,y)d|\ge\beta\|d\|_2^2$ for all $d\in\Null(\nabla c(x)^T)$.
+\end{definition}
+  
+  \begin{definition}
+	\label{def.acute.perturb}
+	For any full column rank matrices $(A,B)\in\Rmbb^{n\times m}\times\Rmbb^{n\times m}$ where $n\ge m$, the $A$ and $B$ are acute perturbations to each other, if and only if
+	\[
+	\rank(AA^\dag BA^\dag A)=m.
+	\]
+\end{definition}
+
+  \blemma
+  \label{lemma.sample.average.result}
+  Under Assumption \ref{ass.boundness} where constant $\sigma_c^{\min}$ exist. In addition, under Assumption \ref{ass.bounded.distribute} where constants $(\theta_J,\nu_J,\mu_H)$ exist. Then, the following hold
+  \bitemize
+    \item[(1).] A sample average result holds, that is, for any $(j,x,\Scal)\in[m]\times \R{n}\times[N]$, we have
+  \bequation
+  \label{eq.sample.average.result}
+  \baligned
+  \left\|\nabla c_\Scal(x)^T\Rcal\left(\nabla c(x)\right) -\nabla c(x)^T\right\|_2^2&\le  N\(\frac{N-|\Scal|}{|\Scal|^2}\)\theta_J\|\nabla c(x)^T\|_2^2,\\
+  \left\|\nabla c_\Scal(x)^T\Ncal\left(\nabla c(x)\right)\right\|_2^2&\le	 N\(\frac{N-|\Scal|}{|\Scal|^2}\)\nu_J\|\nabla c(x)\|_2^2,\\
+ \left\|\nabla^2 c_\Scal^j(x)-\nabla^2 c^j(x)\right\|_2^2&\le N\(\frac{N-|\Scal|}{|\Scal|^2}\)\mu_H \|\nabla^2 c^j(x)\|_2^2.   
+ \ealigned
+  \eequation
+   \item[(2).] The $\nabla c^\dag$, $y_{[N]}$ and $\nabla^2_{xx}L_{[N]}$ are bounded, that is, for any $x\in\R{n}$ we have 
+  \bequation
+  \baligned
+  &\|\nabla c(x)^\dag\|_2\le\frac{1}{\sigma_c^{\min}}\text{ and, }
+\|y_{[N]}(x)\|_2\le \frac{\sigma_f^{\max}}{\sigma_c^{\min}}\text{, moreover}
+\\
+  &
+  \|\nabla^2_{xx}L_{[N]}(x,y_{[N]})\|_2
+\le \lambda_f^{\max}+\frac{\sqrt{m}\sigma_f^{\max}\lambda_c^{\max}}{\sigma_c^{\min}} .
+\ealigned
+  \eequation
+
+  \eitemize
+  \elemma
+  \bproof
+     For the first item, we only show the first inequality in (\ref{eq.sample.average.result}), and the other two inequalities follow a similar argument. Notice that 
+   \bequation
+   \label{eq.c_s=c-c_ns}
+   \baligned
+   \nabla c_{\Scal}(x)=\frac{1}{|\Scal|}\sum_{ i\in\Scal}\nabla c_i(x)
+   &=\frac{1}{|\Scal|}\sum_{i\in[N]}\nabla c_i(x)-\frac{1}{|\Scal|}\sum_{i\in[N]\setminus\Scal}\nabla c_i(x)\\
+   &=\frac{N}{|\Scal|}\nabla c(x)-\frac{1}{|\Scal|}\sum_{i\in[N]\setminus\Scal}\nabla c_i(x),
+   \ealigned
+   \eequation
+   we have
+   \bequationNN
+  \baligned
+  &\left\|\nabla c_\Scal(x)^T\Rcal\left(\nabla c (x)\right) -\nabla c(x)^T\right\|_2^2\\
+  &=\left\| \frac{N}{|\Scal|} \nabla c (x)^T\Rcal\left(\nabla c (x)\right)-\nabla c (x)^T-\frac{1}{|\Scal|}\sum_{i\in[N]\setminus\Scal}\nabla c_i(x)^T\Rcal\left(\nabla c (x)\right)\right\|_2^2\\
+   &=\underbrace{\left\| \frac{N-|\Scal|}{|\Scal|} \nabla c(x)^T-\frac{1}{|\Scal|}\sum_{i\in[N]\setminus\Scal}\nabla c_i(x)\Rcal\left(\nabla c (x)^T\right)\right\|_2^2}_{(i)}.
+   \ealigned
+   \eequationNN
+   Here, the second line substitutes (\ref{eq.c_s=c-c_ns}) into the equation. For the third line, by the definition of $\Rcal$, we have $\nabla c (x)^T\Rcal\left(\nabla c (x)\right)=\nabla c(x)^T$, and substitute it to the first term of the second line gives the result.
+      Further, for $(i)$, we have
+   \bequationNN
+   \baligned
+   (i)
+   &=\frac{1}{|\Scal|^2}\left\| \sum_{i\in[N]\setminus\Scal}\left\{\(\nabla c(x)^T-\nabla c_i(x)^T\Rcal\left(\nabla c(x)\right)\)\times I_n\right\}\right\|_2^2\\
+   &\le \frac{1|}{|\Scal|^2}\sum_{i\in[N]\setminus\Scal}\left\|\nabla c(x)^T-\nabla c_i(x)^T\Rcal\left(\nabla c (x)\right)\right\|_2^2\sum_{i\in[N]\setminus\Scal}\|I_n\|_2^2\\
+    &= \(\frac{N-|\Scal|}{|\Scal|^2}\)\sum_{i\in[N]\setminus\Scal}\left\|\nabla c (x)^T-\nabla c_i(x)^T\Rcal\left(\nabla c (x)\right)\right\|_2^2\\
+    &\le \(\frac{N-|\Scal|}{|\Scal|^2}\)\sum_{i\in[N]}\left\|\nabla c (x)^T-\nabla c_i(x)^T\Rcal\left(\nabla c (x)\right)\right\|_2^2\\
+    &\le \(\frac{N-|\Scal|}{|\Scal|^2}\)N\theta_J\|\nabla c (x)^T\|_2^2.
+  \ealigned
+  \eequationNN
+  Here, the first line puts the denominator outside the norm and uses a fact that $\(N-|\Scal|\) \nabla c(x)^T =\sum_{i\in[N]\setminus\Scal} \nabla c(x)^T $. The second line uses the Cauchy-Schwaz inequality. The third line uses that $\|I_n\|_2=1$. The second to last line adds extra $|\Scal|$ nonnegative terms, and the last line uses the first item of Assumption \ref{ass.bounded.distribute}.
+  
+  For the second item, see {\color{red}cite} for a proof for the bound on $\|\nabla c(x)^\dag\|_2$. 
+  
+  For the bound for $\|y_{[N]}(x)\|_2$, by Assumption \ref{ass.boundness}, first item of Lemma \ref{lemma.sample.average.result} and sub-multiplicity for matrix-vector product, we have
+	\begin{align*}
+		\|y_{[N]}(x)\|_2&=\|-\nabla c (x)^\dag\nabla f(x)\|_2\le\|\nabla c (x)^\dag\|_2\|\nabla f(x)\|_2\le\frac{\sigma_f^{\max}}{\sigma_c^{\min}}.
+	\end{align*}
+	For the last inequality, first, for any $(j,\Scal)\subseteq[m]\times[N]$ we have 
+  \bequation\label{ineq.hess.S}
+  \baligned
+  \|\nabla ^2c^j_\Scal(x )\|_2
+  &\le \|\nabla ^2c^j(x )\|_2+\|\nabla ^2c^j(x )-\nabla ^2c_\Scal^j(x )\|_2\\
+  &\le  \|\nabla ^2c^j(x )\|_2+\sqrt{\mu_H N\(\frac{N-|\Scal|}{|\Scal|^2}\)} \|\nabla^2 c^j(x)\|_2\\
+  &\le \(1+\sqrt{\mu_H N\(\frac{N-|\Scal|}{|\Scal|^2}\)}\)\lambda_c^{\max}.
+  \ealigned
+  \eequation
+  Here, the first line adds, subtracts a term, and uses the triangle inequality. The second line uses bound on Hessian in this Lemma. The last inequality uses Assumption \ref{ass.boundness}.
+  
+  Second, note that for any vector $y\in\R{m}$, we have $\|y\|_1\le\sqrt{m}\|y\|_2$. Combining this result with Assumption \ref{ass.boundness}, we have
+  \bequationNN
+\baligned
+\|\nabla^2_{xx}L_{[N]}(x,y_{[N]})\|_2
+&=\|\nabla^2 f(x )+\sum_{j=1}^my_{[N]}^j\nabla ^2c^j(x )\|_2\\
+&\le\|\nabla^2 f(x )\|_2+\left\|\sum_{j=1}^my_{[N]}^j\nabla ^2c^j(x )\right\|_2\\
+&\le\lambda_f^{\max}+\max_j\{\|\nabla ^2c^j(x )\|_2\}\|y_{[N]}\|_1\\
+&\le\lambda_f^{\max}+\sqrt{m}\max_j\{\|\nabla ^2c^j(x )\|_2\}\|y_{[N]}\|_2\\
+&\le \lambda_f^{\max}+\frac{\sqrt{m}\sigma_f^{\max}\lambda_c^{\max}}{\sigma_c^{\min}}.
+\ealigned
+\eequationNN
+Here, the second line uses the triangle inequality. The third line uses multiplicity and $\|\nabla^2 c^j(x)\|_2\le\max_j\{\|\nabla^2 c^j(x)\|_2\}$. The rest lines use Assumption \ref{ass.boundness} and the norm relationship.
+   \eproof
+%For any $x\in\R{n}$, let a singular decomposition of $\nabla c(x)^T$ be $\nabla c(x)^T=U\Lambda V$ where $(U,V)\in\R{n\times n}\times\R{m\times m}$ are unitary matrices and $\Lambda=\bbmatrix D_{m\times m}\\ {\bf{0}}_{(n-m)\times m}\ebmatrix\in\R{n\times m}$ where ${\bf{0}}_{(n-m)\times m}$ is a matrix full of zeros and $D$ is a diagonal matrix
+%\[
+%D=\bbmatrix
+%\rho_1(\nabla c(x)^T) &               &       & \\
+%              & \rho_2(\nabla c(x)^T) &       & \\
+%              &               &\ddots        &\\
+%              &               &        &\rho_m(\nabla c(x)^T)
+%\ebmatrix.
+%\]
+%Using the singular decomposition, we have
+%\bequationNN
+%\baligned
+%(\nabla c(x)^T)^\dag
+%&=(\nabla c(x)\nabla c(x)^T)^{-1}(\nabla c(x))\\
+%&=(V^T\Lambda^TU^TU\Lambda V)^{-1}V^T\Lambda^T U^T\\
+%&=
+%\ealigned
+%\eequationNN
+%
+%By Assumption \ref{ass.boundness} we have $\rho_m(\nabla c(x)^T)\ge \sigma_c^{\min}$
+
+%When problem (\ref{prob.expected}) with full $\Scal_N$ samples is $(\alpha,\beta)$-morse with a dual variable $y$ defined in (\ref{eq.lsm}) with full samples $\Scal_N$, will the empirical problems (\ref{prob.opt.S}) also be morse with a dual variable $y_\Scal$ chosen in (\ref{eq.lsm})? To answer the question, we will first examine the difference between $\nabla_x L(x,y)$ with $\nabla_x L_\Scal(x,y_\Scal)$, and between $\nabla^2_{xx} L(x,y)$ with $\nabla^2_{xx} L_\Scal(x,y_\Scal)$.
+%For the gradient between them, we have
+%\begin{align*}
+%	&\|\nabla_xL(x,y)-\nabla_x L_\Scal(x,y_\Scal)\|_2\\
+%	&=\|\nabla f(x)+\nabla c(x)^Ty- \nabla f(x)-\nabla c_\Scal(x)^Ty_\Scal\|_2\\
+%	&=\|\nabla c(x)^Ty-\nabla c_\Scal(x)^Ty_\Scal\|_2 \\
+%	&=\|\nabla c(x)^Ty-\nabla c(x)^Ty_\Scal+\nabla c(x)^Ty_\Scal-\nabla c_\Scal(x)^Ty_\Scal\|_2\\
+%	&\le \|\nabla c(x)^T\|_2\|y-y_\Scal\|_2+\|\nabla c(x)^T-\nabla c_\Scal(x)^T\|_2\|y_\Scal\|_2\\
+%	&\le \|\nabla c(x)^T\|_2\|y-y_\Scal\|_2+\|\nabla c(x)^T-\nabla c_\Scal(x)^T\|_2(\|y\|_2+\|y-y_\Scal\|_2).
+%\end{align*}
+%Under Assumption \ref{ass.boundness}, the term $\|\nabla c(x)^T\|_2$ can be bounded. Under Lemma \ref{lemma.sample.average.result}, term $\|\nabla c(x)^T-\nabla c_\Scal(x)^T\|_2$ can be bounded. Hence the above gradient difference only requires extra bounds on $\|y\|_2$ and $\|y-y_\Scal\|_2$, which are shown in Lemma \ref{lemma.bound.y.y_p}. To get there, we will need a few useful results and definitions.
+
+With Definition \ref{def.acute.perturb} and Lemma \ref{lemma.sample.average.result}, we have the following condition on $(\Scal,\theta_J,\nu_J)$ to ensure the Jacobian $\nabla c(x)^T$ and $\nabla c_{\Scal}(x)^T$ are acute perturbations to each other.
+
+\begin{lemma}
+\label{lemma.acute.perturb}
+	Under Assumption \ref{ass.boundness} where constants $(\sigma_c^{\min},\sigma_c^{\max})$ exist. In addition, under Assumption \ref{ass.bounded.distribute} where constants $(\theta_J,\nu_J)$ exist. Then, if $\Scal\subseteq[N]$ satisfies 
+	\[
+	|\Scal|>\frac{2}{1+\sqrt{1+\frac{2(\sigma_c^{\min})^2}{(\theta_J+\nu_J)(\sigma_c^{\max})^2}}}N ,
+	\]
+	the following hold 
+	\bitemize 
+	\item[(1).]For any $x\in\R{n}$ the Jacobian $\nabla c_{\Scal}(x)^T$ is nondegenerate and the associated least square estimator $y_{\Scal}$ in (\ref{eq.lsm}) is well-defined.
+	\item[(2).] For any $x\in\R{n}$, the gradient $\nabla c(x)$ and $\nabla c_{\Scal}(x)$ are acute perturbations to each other.	
+	\eitemize
+\end{lemma}
+
+\begin{proof} 
+First, we examine the difference between $\nabla c_\Scal(x)^T$ and $\nabla c(x)^T$. We have
+\bequation
+	\label{ineq.bound.cn.cs}
+	\baligned
+	&\|\nabla c_\Scal(x)^T-\nabla c(x)^T\|_2^2\\
+	&=\left\|\nabla c_\Scal(x)^T\(\Rcal(\nabla c (x))+ \Ncal(\nabla c (x))\)-\nabla c (x)^T\right\|_2^2\\
+	&=\left\|\nabla c_\Scal(x)^T \Rcal(\nabla c (x))-\nabla c (x)^T+\nabla c_\Scal(x)^T\Ncal(\nabla c (x))) \right\|_2^2\\
+	&\le2\left\|\nabla c_\Scal(x)^T \Rcal(\nabla c (x))-\nabla c (x)^T\right\|_2^2+2\left\|\nabla c_\Scal(x)^T\Ncal(\nabla c (x))) \right\|_2^2\\
+	&\le 2N\(\frac{N-|\Scal|}{|\Scal|^2}\)(\theta_J+\nu_J)\|\nabla c (x)^T\|_2^2.
+	\ealigned
+\eequation
+Here, the second line uses $I_n=\Rcal(\nabla c (x))+\Ncal(\nabla c (x))$. The third line rearranges terms. The second to last line uses the Cauchy-Schwaz inequality, and the last line uses Lemma \ref{lemma.sample.average.result}.
+			
+Further, \cite[Theorem 1]{stewart1998perturbation} gives us a bound on the difference of the smallest singular values, i.e. $|\sigma_m(\nabla c_\Scal(x)^T)-\sigma_m(\nabla c(x)^T) |\le \|\nabla c_\Scal(x)-\nabla c (x)^T\|_2$. Combining it with (\ref{ineq.bound.cn.cs}) we have
+\begin{equation}
+	\label{ineq:perturb weyl}
+	\baligned
+	|\sigma_m(\nabla c_\Scal(x)^T)-\sigma_m(\nabla c(x)^T) |
+	&\le \sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c(x)^T\|_2.
+	\ealigned
+\end{equation}
+By the choice of $\Scal$, we have $ \sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}<\frac{\sigma_c^{\min}}{\sigma_c^{\max}} $, which gives a bound for the smallest singular value of $\nabla c_\Scal(x)^T$,
+	\begin{align*}
+		\sigma_m(\nabla c_\Scal(x)^T)
+		&=\sigma_m(\nabla c (x)^T)+\sigma_m(\nabla c_\Scal(x)^T)-\sigma_m(\nabla c (x)^T)\\
+		&\ge \sigma_m(\nabla c (x)^T)-\left|\sigma_m(\nabla c_\Scal(x)^T)-\sigma_m(\nabla c (x)^T)\right|\\
+		&\ge \sigma_m(\nabla c (x)^T)- \sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c (x)\|_2\\
+		&> \sigma_c^{\min}- \sigma_c^{\min}= 0.
+	\end{align*}
+	Here, the first line adds and subtracts a term. The third line plugs in (\ref{ineq:perturb weyl}). The above result indicates that the smallest singular value of $\nabla c_\Scal(x)^T$ is positive, and we can conclude that $\nabla c_\Scal(x)^T$ is of full column rank and the dual variable $y(x)$ in (\ref{eq.lsm}) is well defined. 
+
+For the second item, by Assumption \ref{ass.boundness}, for any $x\in\R{n}$, we have the Jacobian $\nabla c (x)^T$ is of full row rank. Further, we have 
+	\begin{align*}
+		&\nabla c (x) \nabla c (x)^\dag \nabla c_\Scal(x) \nabla c (x) ^\dag \nabla c (x) \\
+		&=\nabla c (x)\nabla c (x)^\dag \nabla c_\Scal(x)\\
+		&=\nabla c (x)\nabla c (x)^\dag\left(\nabla c (x)+ \nabla c_\Scal(x)-\nabla c (x)\right)\\
+		&=\nabla c (x)\left(I_m+\underbrace{\nabla c (x)^\dag\left(\nabla c_\Scal(x)-\nabla c (x)\right)}_{(ii)}\right).
+	\end{align*}
+	Here, the second line uses the definition of pseudo-inverse that $\nabla c(x)^\dag \nabla c(x)=I_m$. The second to last line adds and subtracts a term, and the last line combines the product of the last two terms from the previous equality. 
+	
+Combining the sub-multiplicity of the matrix product, the first item of Lemma \ref{lemma.sample.average.result}, inequality (\ref{ineq.bound.cn.cs}) and the choice of $\Scal$, we have:
+	\begin{align*}
+\|(ii)\|_2&=\left\| \nabla c(x)^\dag\left(\nabla c_\Scal(x)-\nabla c (x)\right)\right\|_2\\
+&\le \left\|\nabla c (x)^\dag\right\|_2\left\|\left(\nabla c_\Scal(x)-\nabla c (x)\right)\right\|_2\\
+&\le\frac{1}{\sigma_c^{\min}}  \sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c (x)\|_2\\
+&< \frac{1}{\sigma_c^{\min}}\sigma_c^{\min}=1.
+	\end{align*}
+	Again, by \cite[Theorem 1]{stewart1998perturbation}, we have 
+	\[
+	\sigma_m(I_m)-\sigma_m(I_m+(ii))\le \left|\sigma_m(I_m)-\sigma_m(I_m+(ii))\right|\le\|(ii)\|_2<1,
+	\]
+	and the most left and right terms of the above inequality give us
+	\bequationNN
+		\sigma_m(I_m+(ii))> \sigma_m(I_m)-1=1-1=0,
+	\eequationNN
+	which is positive. Hence, the matrix $I_m+(ii)$ is of full rank. Combining with the fact that $\nabla c_{[N]}(x)^T$ has full column rank, we have that $\nabla c (x)^T(I_m+(ii))$ has full column rank, that gives us
+	\[
+	\rank\(\nabla c (x)\nabla c (x)^\dag \nabla c_\Scal(x)\nabla c (x)^\dag \nabla c (x)\)=m.
+	\]	
+	By Definition \ref{def.acute.perturb}, the $\nabla c(x)$ and $\nabla c_\Scal(x)$ are acute perturbations to each other.
+\end{proof}
+%When $x_k$ is an $\epsilon_k$-optimal solution for the $k$th iteration, what benefits will $x_k$ bring by being the starting point for the $(k+1)$th subproblem? 
+
+Now, we can present the first type of bounds.
+\begin{lemma}
+\label{lemma.bound.y.y_p}
+Under Assumption \ref{ass.boundness} where constants $(\sigma_{f}^{\max}, \sigma_c^{\min},\sigma_{c}^{\max})$ exist. In addition, under Assumption \ref{ass.bounded.distribute} where constants $(\theta_J,\nu_J)$ exist. Then, for any $x\in\R{n}$, if the sample set $\Scal\subseteq[N]$ satisfies 
+\[
+|\Scal|\ge\frac{2}{1+\sqrt{1+\frac{2(\sigma_c^{\min})^2}{9(\theta_J+\nu_J)(\sigma_c^{\max})^2}}}N 
+\]
+and let $y_\Scal(x)=-\nabla c_\Scal(x)^\dag\nabla f(x)$, we have
+ 	\[
+ 	\|y_{[N]}(x)-y_\Scal(x)\|_2\le \frac{3\sigma_f^{\max}\sigma_c^{\max}}{2 (\sigma_c^{\min})^2}\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}.
+ 	\]
+ \end{lemma}
+ 
+\begin{proof}
+
+%	By Lemma.\ref{lemma:acute perturb}, we have that $\nabla c(x)$ and $\nabla c_\Scal(x)$ are acute perturbations to each other. By Colloary 3.9 in \cite{396bf6e1-ef54-3bf6-a49b-862db8404076}, we have
+%	\[
+%	\|(\nabla c_\Scal(x))^T)^\dag\|_2\le\frac{\|(\nabla c(x)^T)^\dag\|_2}{1-\|(\nabla c(x)^T)^\dag\|_2\|\nabla c_\Scal(x)-\nabla c(x)\|_2}.
+%	\]
+%	By the choice of $p$ that $\frac{p}{\log p}\ge \frac{9\tau^2Cn}{(\sigma_c^{\min})^2}$, Proposition.\ref{prop.bound on nabla c psedue}, and Theorem.\ref{theo:sample-average-result} we have
+%	\begin{align*}
+%		\frac{\|(\nabla c(x)^T)^\dag\|_2}{1-\|(\nabla c(x)^T)^\dag\|_2\|\nabla c_p(x)-\nabla c(x)\|_2}&\le \frac{\frac{1}{\sigma_c^{\min}}}{1-\frac{1}{\sigma_c^{\min}}\tau\sqrt{\frac{Cn\log p}{p}}}\\
+%		&\le \frac{3}{2\sigma_c^{\min}}.
+%	\end{align*}
+	
+%Now, we are going to derive the bound for $\|y_{[N]}(x)-y_\Scal(x)\|_2$. 
+By the choice of $\Scal$, we have $\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}\le \frac{\sigma_c^{\min}}{3\sigma_c^{\max}}<\frac{\sigma_c^{\min}}{\sigma_c^{\max}}$ where $\sigma_c^{\min}>0$, which satisfies requirements of Lemma \ref{lemma.acute.perturb}. Hence, we have that $\nabla c (x)$ and $\nabla c_\Scal(x)$ are of full column rank and are acute perturbations to each other. By \cite[Theorem 5.2]{396bf6e1-ef54-3bf6-a49b-862db8404076}, we have the following:
+\bequation
+\label{ineq.define.iii}
+	\|y_{[N]}(x)-y_\Scal(x)\|_2
+	\le \underbrace{\frac{\|\nabla c (x)^\dag\|_2\|\nabla c (x)-\nabla c_\Scal(x)\|_2}{1-\|\nabla c (x)^\dag\|_2\|\nabla c (x)-\nabla c_\Scal(x)\|_2}}_{(iii)}\|y_{[N]}(x)\|_2.
+\eequation
+	By inequality (\ref{ineq.bound.cn.cs}) and the choice of $\Scal$, we have
+	\bequationNN
+	\|\nabla c_\Scal(x)-\nabla c (x)\|_2
+	\le\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c (x)\|_2\le \frac{1}{3}\sigma_c^{\min},
+\eequationNN
+which further gives us
+	\bequation
+	\label{ineq.bound.psedueC.C}
+		1-\|\nabla c (x)^\dag\|_2\|\nabla c (x)-\nabla c_\Scal(x)\|_2\ge1-\frac{1}{\sigma_c^{\min}}\frac{\sigma_c^{\min}}{3}=2/3.
+	\eequation
+	Hence, we have
+	\bequation
+	\label{ineq.bound.psi}
+	\baligned
+	(iii)
+	&\le \frac{3}{2}\|\nabla c(x)^\dag\|_2\|\nabla c(x)-\nabla c_\Scal(x)\|_2\\
+	&\le \frac{3 \sigma_c^{\max}}{ 2\sigma_c^{\min}}\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}.
+\ealigned
+\eequation
+Here, the first line uses (\ref{ineq.bound.psedueC.C}) at the denominator, and the last line uses the bound for $\|\nabla c(x)^\dag\|_2$. Combining with the bound $\|y_{[N]}(x)\|_2\le\frac{\sigma_f^{\max}}{\sigma_c^{\min}}$, we have
+	\[
+	\|y_{[N]}(x)-y_\Scal(x)\|_2
+	 \le \frac{3\sigma_f^{\max}\sigma_c^{\max}}{2 (\sigma_c^{\min})^2}\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}.
+	\]
+	
+%	For the bound of  $\|z_q-y_p\|_2$, using the result just proved, and the fact that $\frac{\log q}{q}\ge\frac{\log p}{p}$ for any $q\ge p>0$, with probability at least $(1-\delta)$, we have
+%	\[
+%	\|z_q-y\|_2
+%	 \le \frac{3\tau\sigma_f^{\max}\sqrt{Cn}}{ (\sigma_c^{\min})^2}\sqrt{\frac{\log q}{q}}\le \frac{3\tau\sigma_f^{\max}\sqrt{Cn}}{ (\sigma_c^{\min})^2}\sqrt{\frac{\log p}{p}}.
+%	\]
+%	By triangle inequality, we have:
+%	\begin{align*}
+%		\|z_q-y_p\|_2
+%		&\le\|z_q-y\|_2+\|y-y_p\|_2\le \frac{6\tau\sigma_f^{\max}\sqrt{Cn}}{ (\sigma_c^{\min})^2}\sqrt{\frac{\log p}{p}}.
+%	\end{align*}
+%	This result requires Theorem.\ref{theo.sample-average-result} holds both for sample size of $p$ and $q$, hence it holds with probability $(1-\delta)^2$.
+\end{proof}
+
+The difference in the Hessian conditions is more complicated compared to the gradient condition. Recall the Hessian condition in Definition \ref{def.constraint.morse} that
+\[
+|d^T\nabla^2_{xx}L(x,y)d|\ge\beta\|d\|_2^2,\ \forall\ d\in\Null(\nabla c(x)^T).
+\]
+When we consider the empirical system (\ref{prob.opt.S}), not only did the Lagrangian function $L$ change, but also the null space $\Null(\nabla c(x)^T)$ change. We start by giving a general result for two perturbed null spaces by examining the difference between vectors in one null space and their projections onto the other null space.
+
+%\begin{lemma}
+%\label{lemma.d.minus.proj.d}
+%	For any two full column rank matrices $(A,B)\in\Rmbb^{n\times m}\times\Rmbb^{m\times n}$, and for any $d\in \Null(B^T)$, the following holds:
+%	\begin{align*}
+%	&\|\Rcal(A)d\|_2\le   \|A^\dag\|_2\|A-B\|_2\|d\|_2.
+%	\end{align*}
+%%	Moreover, if $\|A^\dag\|_2\|A-B\|_2\le1$, we have
+%%	\begin{align*}
+%%	&\|\text{Proj}_{\Null(A^T)}(d)\|_2\ge \sqrt{ \left(1-\|A^\dag\|_2^2\|A-B\|_2^2\right)}\|d\|_2.
+%%	\end{align*}
+%\end{lemma}
+%
+%\begin{proof}
+%	For any $d\in \Null(B^T)$, recall the projection matrix onto the row space of $A^T$ is defined as $\Rcal(A):=AA^\dag$, we have
+%	\begin{align*}
+%	d-\text{Proj}_{\Null(A^T)}(d)
+%	&=d-(I_n-\Rcal(A) )d=\Rcal(A)d.
+%	\end{align*}
+%	Since $d \in \Null(B^T)$ and $\Ncal(B)$ is a projection matrix to the null space $\Null(B^T)$, we have $\Ncal(B)d=d$.
+%Combining with \cite[Theorem 2.4]{396bf6e1-ef54-3bf6-a49b-862db8404076} we have
+%\bequation
+%\label{ineq.Ra.Rb}
+%	\baligned
+%		\|\Rcal(A)d\|_2=\|\Rcal(A)\Ncal(B)d\|_2\le \|A^\dag\|_2\|A-B\|_2\|d\|_2.
+%	\ealigned
+%	\eequation
+%	Combining the above results, we have
+%	\begin{align*}
+%		\|d-\text{Proj}_{\Null(A^T)}(d)\|_2
+%		&=\|\Rcal(A)d\|_2=\|\Rcal(A)\Ncal(B)d\|_2\le \|A^\dag\|_2\|A-B\|_2\|d\|_2.
+%	\end{align*}
+
+%	Moreover, since $\text{Proj}_{\Null(A^T)}$ is an orthogonal projector {\color{red}[cite]}, we also have 
+%	\[
+%	\|d\|_2^2= \|\text{Proj}_{\Null(A^T)}(d)\|_2^2+\|d -\text{Proj}_{\Null(A^T)}(d)\|_2^2,
+%	\]
+%	hence, we have
+%	\begin{align*}
+%			\|\text{Proj}_{\Null(A^T)}(d)\|_2^2
+%			&= \|d\|_2^2-\|d-\text{Proj}_{\Null(A^T)}(d)\|_2^2\\
+%			&\ge \left(1- \|A^\dag\|_2^2\|A-B\|_2^2\right)\|d\|_2^2,
+%	\end{align*}
+%	and when $\|A^\dag\|_2\|A-B\|_2\le1$, taking square roots on both sides of the above inequality gives the second result.
+%\end{proof}
+
+\begin{lemma}
+\label{coro.proj.apply}
+	Under Assumption.\ref{ass.boundness} where constants $(\sigma_c^{\min},\sigma_{c}^{\max})$ exist. In addition, under Assumption \ref{ass.bounded.distribute} where constants $(\theta_J,\nu_J)$ exist. For any $x\in\R{n}$ and any $\Scal\subseteq[N]$ such that
+		\bequation
+	\label{ineq.Scal.size.large}
+	|\Scal|>\frac{2}{1+\sqrt{1+\frac{2(\sigma_c^{\min})^2}{(\theta_J+\nu_J)(\sigma_c^{\max})^2}}}N.
+\eequation
+Then, for any $d_\Scal\in \Null(\nabla c_\Scal(x)^T)$, we have
+		\begin{align*}
+	&\frac{\|\Rcal(\nabla c(x))(d_\Scal)\|_2}{\|d_\Scal\|_2}\le  \frac{\sigma_c^{\max} }{\sigma_c^{\min}} \sqrt{\frac{2N\(N-|\Scal|\)\(\theta_J+\nu_J\)}{|\Scal|^2}} <1.
+	\end{align*}
+%	\begin{itemize}
+%		\item[(1).] 
+%	\text{ and } \\
+%	&\frac{\|\text{Proj}_{\Null(\nabla c(x)^T)}(d_\Scal)\|_2}{\|d_\Scal\|_2}\ge \sqrt{ \left(1- \(\frac{\sigma_c^{\max} }{\sigma_c^{\min}}\)^2 \frac{2N\(N-|\Scal|\)\(\theta_J+\nu_J\)}{|\Scal|^2}\right)}
+%	\item[(2).] For any set $\Scal'\subseteq[N]$ such that $\Scal'\supseteq\Scal$, and for any $d_{\Scal'}\in \Null(\nabla c_{\Scal'}(x)^T)$, we have
+%		\begin{align*}
+%	&\frac{\|\Rcal(\nabla c_\Scal(x))(d_{\Scal'})\|_2}{\|d_{\Scal'}\|_2}\le 
+%	\frac{11\sigma_c^{\max} }{4\sigma_c^{\min}} \sqrt{\frac{2N\(N-|\Scal|\)\(\theta_J+\nu_J\)}{|\Scal|^2}}
+%	\text{ and } \\
+%	&\frac{\|\text{Proj}_{\Null(\nabla c_\Scal(x)^T)}(d_{\Scal'})\|_2}{\|d_{\Scal'}\|_2}\ge \sqrt{ \left(1- \(\frac{\sigma_c^{\max} }{\sigma_c^{\min}}\)^2 \frac{32N\(N-|\Scal|\)\(\theta_J+\nu_J\)}{|\Scal|^2}\right)}
+%	.
+%	\end{align*}
+%	\end{itemize}
+\end{lemma}
+\begin{proof}
+Since $d_\Scal \in \Null(\nabla c_\Scal(x)^T)$ and $\Ncal(\nabla c_\Scal(x))$ is a projection matrix to the null space $\Null(\nabla c_\Scal(x)^T)$, we have $\Ncal(\nabla c_\Scal(x))d_\Scal=d\Scal$. In addition, by Lemma \ref{lemma.acute.perturb}, (\ref{ineq.Scal.size.large}) ensures $\nabla c_\Scal(x)$ and $\nabla c(x)$ are of full column rank. Combining with \cite[Theorem 2.4]{396bf6e1-ef54-3bf6-a49b-862db8404076} we have
+\bequation
+\label{ineq.Ra.Rb}
+	\baligned
+		\|\Rcal(\nabla c(x))d_\Scal\|_2
+		&=\|\Rcal(\nabla c(x))\Ncal(\nabla c_\Scal(x))d\|_2\\
+		&\le \|\nabla c(x)^\dag\|_2\|\nabla c(x)-\nabla c_\Scal(x)\|_2\|d_\Scal\|_2.
+	\ealigned
+	\eequation
+Then, combined with Lemma \ref{lemma.sample.average.result} gives the desired result. Moreover, the choice of $|\Scal|$ (\ref{ineq.Scal.size.large}) gives us
+\[
+\frac{\sigma_c^{\max} }{\sigma_c^{\min}} \sqrt{\frac{2N\(N-|\Scal|\)\(\theta_J+\nu_J\)}{|\Scal|^2}} <1.
+\]
+	 \end{proof}
+%	Note that the choice of $|\Scal|$ ensures
+%	 \[
+%		\frac{\sigma_c^{\max} }{\sigma_c^{\min}} \sqrt{\frac{2N\(N-|\Scal|\)}{|\Scal|^2}\(\theta_J+\nu_J\)}\le\frac{1}{4}<1,
+%	\]
+%	and the second inequality of the first item holds.
+	
+%	For the second item, recall the term $(iii)$ defined in (\ref{ineq.define.iii}) we have
+%	\bequationNN
+%	\baligned
+%	\|\(\nabla c_{\Scal}(x)\)^\dag\|_2
+%	&\le \|\nabla c_{\Scal}(x)^\dag-\nabla c(x)^\dag\|_2+\|\nabla c(x)^\dag\|_2\\
+%	&\le (iii)\times\|\nabla c(x)^\dag\|_2+\|\nabla c(x)^\dag\|_2\\
+%	&\le \(\frac{3 \sigma_c^{\max}}{ 2\sigma_c^{\min}}\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}+1\)\|\nabla c(x)^\dag\|_2\\
+%	&\le \frac{11}{8}\|\nabla c(x)^\dag\|_2\le \frac{11}{8\sigma_c^{\min}}.
+%	\ealigned
+%	\eequationNN
+%	Here, the first line uses triangle inequality. The second line uses \cite[Corollary 3.9]{396bf6e1-ef54-3bf6-a49b-862db8404076}. The third line uses (\ref{ineq.bound.psi}), and the last line comes from the requirement for $|\Scal|$ and the bound for $\|\nabla c(x)^\dag\|_2$. Furthermore, we have
+%	\bequationNN
+%	\baligned
+%	\|\nabla c_{\Scal}(x)-\nabla c_{\Scal'}(x)\|_2&\le \|\nabla c_{\Scal}(x)-\nabla c (x)\|_2+\|\nabla c_{\Scal'}(x)-\nabla c (x)\|_2\\
+%	&\le 2 \sigma_c^{\max} \sqrt{\frac{2N\(N-|\Scal|\)}{|\Scal|^2}\(\theta_J+\nu_J\)}.
+%	\ealigned
+%	\eequationNN
+%	Here, the first line uses triangle inequality. The second line comes from the fact that the right-hand side of (\ref{eq.sample.average.result}) decreases when $|\Scal|$ increases.
+%	Combining the above two inequalities with Lemma \ref{lemma.d.minus.proj.d} gives us the desired results.
+	 
+
+With this result, we can now look into the Hessian condition for empirical constraint Morse problem. In particular, let $d\in\Null(\nabla c_\Scal(x)^T)$, vector $\dtilde=\Ncal\(\nabla c(x)\)d$ and $r=d-\dtilde$, we tend to look at the difference
+\[
+\left|d^T\nabla^2_{xx}L_\Scal(x,y_\Scal)d-\dtilde^T\nabla^2_{xx}L_{[N]}(x,y_{[N]})\dtilde\right|,
+\]
+and the following lemma gives us a general bound for the above term.
+
+%\begin{lemma}
+%\label{lemma.bound.hess.cond}
+%	For any $(y_{[N]},y_\Scal,x,d,\dtilde,r)\in\Rmbb^m\times\Rmbb^m\times\R{n}\times\R{n}\times\R{n}\times\R{n}$ where $d=r+\dtilde$ and $ r^T\dtilde=0$. In addition, for any set $\Scal\subseteq[N]$, define functions $L_{[N]}(x,y_{[N]}):=f(x)+c(x)^Ty_{[N]}$ and $L_\Scal(x,y_\Scal):=f(x)+c_\Scal(x)^Ty_\Scal$. Moreover, define two parameters $h_1:=\max_j\left\{\left\|(\nabla^2c_\Scal^j(x)-\nabla^2c^j(x))\right\|_{2}\right\}$ and $h_2:=\max_j \left\|\nabla^2c^j(x)\right\|_2$, we have
+%	\bequationNN
+%	\baligned
+%	&\left|d^T\nabla^2_{xx}L_\Scal(x,y_\Scal)d-\dtilde^T\nabla^2_{xx}L_{[N]}(x,y_{[N]})\dtilde\right|\\
+%	&\le 3\|\nabla^2 f(x)\|_2\|r\|_2\|d\|_2+\sqrt{m}\left(\|y_{[N]}\|_2h_1+\|y_\Scal-y_{[N]}\|_2\left(h_2 +h_1\right)\right)\|d\|_2^2\\
+%	&\hspace{2em}+ 3\sqrt{m}\left(h_1+h_2\right)\left(\|y_{[N]}\|_2+ \|y_{[N]}-y_\Scal\|_2\right)\|r\|_2\|d\|_2.
+%	\ealigned
+%	\eequationNN		
+% 		  we have
+%		\begin{align*}
+%	&\|\sum_{i=1}^m(y^i_p\nabla^2c_p^i(x)-y^i\nabla^2c^i(x))\|_2\\
+%	&\le \sqrt{m}\left(\|y\|_2\max_i\left\{\left\|(\nabla^2c_p^i(x)-\nabla^2c^i(x))\right\|_{2}\right\}+\|y_p-y\|_2\left(\max_i\left\{\left\|\nabla^2c^i(x)\right\|_2\right\}\right.\right.\\
+%	&\hspace{2em}\left.\left.+\max_i\left\{\left\|(\nabla^2c_p^i(x)-\nabla^2c^i(x))\right\|_{2}\right\}\right)\right)
+%	\end{align*}
+%		  we have
+%		\begin{align*}
+%	\|\sum_{i=1}^my_p^i\nabla^2c^i_p(x)\|_2
+%	&\le \sqrt{m}\left(\max_i\left\{\left\|(\nabla^2c_p^i(x)-\nabla^2c^i(x))\right\|_{2}\right\}\right.\\
+%	&\hspace{2em}\left.+\max_i\left\{\left\|\nabla^2c^i(x)\right\|_2\right\}\right)\left(\|y\|_2+ \|y-y_p\|_2\right).	
+%	\end{align*}
+% \end{lemma}
+%\begin{proof}
+%We first give a bound for $\|\sum_{j=1}^m(y_\Scal^j\nabla^2c_\Scal^j(x)-y_{[N]}^j\nabla^2c^j(x))\|_2$. We have
+%\begin{align*}
+%	&\|\sum_{j=1}^m(y^j_\Scal\nabla^2c_\Scal^j(x)-y_{[N]}^j\nabla^2c ^j(x))\|_2\\
+%	&=\|\sum_{j=1}^m(y_\Scal^j\nabla^2c^j_\Scal(x)-y_\Scal^j\nabla^2c ^j(x)+y_\Scal^j\nabla^2c^j(x)-y_{[N]}^j\nabla^2c^j(x))\|_2\\
+%	&=\left\|\sum_{j=1}^m\left(y^j_\Scal\left(\nabla^2c^j_\Scal(x)-\nabla^2c^j(x)\right)\right)+\sum_{j=1}^m\left(\left(y_\Scal^j-y_{[N]}^j\right)\nabla^2c^j(x)\right)\right\|_2\\
+%	&\le\underbrace{\sum_{j=1}^m\left\|y_\Scal^j\right\|_2\left\|\nabla^2c_\Scal^j(x)-\nabla^2c^j(x)\right\|_{2}+\sum_{j=1}^m\left\|y_\Scal^j-y_{[N]}^j\right\|_2\left\|\nabla^2c^j(x)\right\|_2}_{(iv)}.
+%\end{align*}
+%Here, the second and third lines add, subtract, and rearrange terms. The last line uses triangle inequality and submultiplicity. Recall the definition of $h_1$ and $h_2$, we have
+%\bequation
+%\label{eq.sublemma1}
+%\baligned
+%	(iv)
+%	&\le \sum_{j=1}^m\(|y_\Scal^j|h_1\)+\sum_{j=1}^m\(|y_\Scal^j-y_{[N]}^j|h_2\) 
+%	=\|y_\Scal\|_1h_1+\|y_\Scal-y_{[N]}\|_1h_2\\
+%	&\le \sqrt{m}\left(\|y_\Scal\|_2h_1+\|y_\Scal-y_{[N]}\|_2h_2\right)
+%	\le \sqrt{m}\left(\|y_{[N]}\|_2h_1+\|y_\Scal-y_{[N]}\|_2\left(h_1+h_2\right)\right).
+%\ealigned
+%\eequation
+%Here, the first line uses the definition of one-norm. The second line uses the fact that for any $y\in\R{m}$ it holds $\|y\|_1\le\sqrt{m}\|y\|_2$, and the last inequality uses the triangle inequality $\|y_\Scal\|_2\le\|y_{[N]}\|_2+\|y_{[N]}-y_\Scal\|_2$. 
+
+%We next bound the term $\|\sum_{i=1}^my_\Scal^i\nabla^2c^i_\Scal(x)\|_2$. We have
+%\bequation
+%\label{eq.sublemma2}
+%\baligned
+%\|\sum_{j=1}^my_\Scal^j\nabla^2c^j_\Scal(x)\|_2
+%&\le \sum_{j=1}^m\|y_\Scal^j\|_2\|\nabla^2c^j_\Scal(x)\|_2\\
+%&\le \sum_{j=1}^m\|y_\Scal^j\|_2\(\|\nabla^2c^j_\Scal(x)-\nabla^2c^j (x)\|_2+\|\nabla^2c^j(x)\|_2\) \\
+%&\le \sum_{j=1}^m\|y_\Scal^j\|_2\(h_1+h_2\) \\
+%&\le\sqrt{m}\left(\|y_{[N]}\|_2+ \|y_{[N]}-y_\Scal\|_2\right)\left(h_1+h_2\right).
+%\ealigned
+%\eequation
+%Here, the first line uses the triangle inequality and submultiplicity. The second line uses the triangle inequality. The third line uses the definitions of $h_1$ and $h_2$. And the last line follows similar arguments for $\|y_\Scal\|_1$.
+%Now we can show the Lemma. We have
+%\begin{align*}
+%	& d^T\nabla^2_{xx}L_\Scal(x,y_\Scal)d-\dtilde^T\nabla^2_{xx}L_{[N]}(x,y_{[N]})\dtilde \\
+%	&=(\dtilde+r)^T\left(\nabla^2 f(x)+\sum_{j=1}^m y_\Scal^j\nabla^2c^j_\Scal(x)\right)(\dtilde+r)-\dtilde^T\Bigg(\nabla^2 f(x)\\
+%	&\hspace{2em}+\sum_{j=1}^my_{[N]}^j\nabla^2c^j(x)\Bigg)\dtilde\\
+%	&=2\dtilde^T\nabla^2f(x)r+r^T\nabla^2 f(x)r+\dtilde^T\left(\sum_{j=1}^my_\Scal^j\nabla^2c_\Scal^j(x)-\sum_{j=1}^my_{[N]}^j\nabla^2c^j(x)\right)\dtilde\\
+%	&\hspace{2em}+2\dtilde^T \sum_{j=1}^my_\Scal^j\nabla^2c_\Scal^j(x)r+r^T\sum_{j=1}^my_\Scal^j\nabla^2c^j_\Scal(x)r\\
+%	&=\(2\dtilde+r\)^T\nabla^2 f(x)r+\dtilde^T\sum_{j=1}^m\left(y_\Scal^j\nabla^2c_\Scal^j(x)-y_{[N]}^j\nabla^2c^j(x)\right)\dtilde\\
+%	&\hspace{2em}+(2\dtilde+r)^T\sum_{j=1}^my_\Scal^j\nabla^2c_\Scal^j(x)r.
+%\end{align*}
+%Here the equalities are by writing each term explicitly and then rearranging terms.
+%
+%Furthermore, we have
+%\bequationNN
+%	\baligned
+%	&\left|d^T\nabla^2_{xx}L_\Scal(x,y_\Scal)d-\dtilde^T\nabla^2_{xx}L_{[N]}(x,y_{[N]})\dtilde\right|\\
+%	&\le \|\nabla^2 f(x)\|_2\|2\dtilde +r\|_2\|r\|_2+\left\|\sum_{j=1}^m\left(y_\Scal^j\nabla^2c_\Scal^j(x)-y_{[N]}^j\nabla^2c^j(x)\right)\right\|_2\|\dtilde\|_2^2\\
+%	&\hspace{2em}+ \|\sum_{j=1}^my_\Scal^j\nabla^2c_\Scal^j(x)\|_2\|2\dtilde+r\|_2\|r\|_2\\
+%	&\le 3\|\nabla^2 f(x)\|_2\|r\|_2\|d\|_2+\|\sum_{j=1}^m\left(y_\Scal^j\nabla^2c_\Scal^j(x)-y_{[N]}^j\nabla^2c^j(x)\right)\|_2\|d\|_2^2\\
+%	&\hspace{2em}+ 3\|\sum_{j=1}^my_\Scal^j\nabla^2c_\Scal^j(x)\|_2\|r\|_2\|d\|_2.
+%	\ealigned
+%\eequationNN
+%Here, the first inequality uses triangle inequality and sub-multiplicity of matrix-vector product. For the second inequality, notice that by the definition of $(d,\dtilde,r)$, we have $\|d\|_2^2=\|\dtilde\|_2^2+\|r\|_2^2$, which gives us that $\max\{\|\dtilde\|_2, \|r\|_2\}\le \|d\|_2$ and $\|2\dtilde+r\|_2\le \|2\dtilde\|_2+\|r\|_2\le3\|d\|_2$. Plugging in this with the fact that $\|d\|_2\ge\|\dtilde\|_2$ gives the result.
+%
+%Combining with (\ref{eq.sublemma1},\ref{eq.sublemma2}), we have
+%\begin{align*}
+%	&\left|d^T\nabla^2_{xx}L_\Scal(x,y_\Scal)d-\dtilde^T\nabla^2_{xx}L_{[N]}(x,y_{[N]})\dtilde\right|\\
+%	&\le 3\|\nabla^2 f(x)\|_2\|r\|_2\|d\|_2+\sqrt{m}\left(\|y_{[N]}\|_2h_1+\|y_\Scal-y_{[N]}\|_2\left(h_2 +h_1\right)\right)\|d\|_2^2\\
+%	&\hspace{2em}+ 3\sqrt{m}\left(h_1+h_2\right)\left(\|y_{[N]}\|_2+ \|y_{[N]}-y_\Scal\|_2\right)\|r\|_2\|d\|_2.
+%\end{align*}
+%\end{proof}
+
+In summary, we have the result for the Morse property of the empirical problem. We define the following three parameters
+
+\[
+\begin{cases}
+	\eta_1:=\tfrac{\sigma_c^{\max}}{\sigma_c^{\min}}\sqrt{2\(\theta_J+\nu_J\)},\\
+	\eta_2:=\tfrac{\sigma_f^{\max}\lambda_c^{\max}}{\sigma_c^{\min}}\sqrt{m\mu_H},\\
+	\eta_3:=\eta_2 +3\eta_1 \lambda_f^{\max}+\frac{9\eta_1\eta_2}{2\sqrt{\mu_H}}.
+%	\eta_2:=\(\eta_1\(3\lambda_f^{\max}+15\sqrt{m}\frac{\sigma_f^{\max}\lambda_c^{\max}}{\sigma_c^{\min}}\)  +\frac{\sqrt{m}\sigma_f^{\max}}{\sigma_c^{\min}} \sqrt{\mu_H}\). 
+\end{cases}
+\]
+
+\begin{theorem}
+\label{thero: emprical morse}
+Under Assumption.\ref{ass.boundness} and Assumption.\ref{ass.func distribution} where the constants $(\sigma_c^{\min},\sigma_c^{\max},\sigma_f^{\max},\lambda_c^{\max},\lambda_f^{\max},\theta_J,\nu_J,\mu_H )$ exist, and in addition, assuming the problem (\ref{prob.opt.N}) is $(\alpha,\beta)$-morse with the dual variable $y_{[N]}$ and $y_\Scal$ are chosen as in (\ref{eq.lsm}). Then, for any $\Scal\subseteq[N]$ when satisfies:
+\bequation
+\label{ineq.theorem1.S}
+g_\Scal:=\sqrt{\frac{N(N-|\Scal|)}{|\Scal|^2}}\le 
+\min\left\{\frac{1}{3\eta_1}, \frac{\alpha}{2\sigma_f^{\max}\eta_1},
+\frac{\beta}{2\sqrt{(\eta_1\beta+\eta_3)^2+3\eta_1\eta_2\beta}}\right\},
+\eequation
+the problem (\ref{prob.opt.S}) is $(\alpha_\Scal,\beta_\Scal)$-morse, where
+\bequationNN
+\bcases
+\alpha_\Scal=\alpha-\sigma_f^{\max}\eta_1g_\Scal>0\text{ and }\\
+\beta_\Scal=\beta-\(\eta_1\beta+\eta_3\)g_\Scal-\frac{3}{2} \eta_1\eta_2 g_\Scal^2>0.
+\ecases
+\eequationNN
+\end{theorem}
+
+\begin{proof}
+	For simplicity of analysis, let $g_\Scal:=\sqrt{\frac{N(N-|\Scal|)}{|\Scal|^2}}$ when $|\Scal|\in(0,N]$. By inequality (\ref{ineq.bound.cn.cs}) and triangle inequality, we have that for any $x\in\R{n}$\bequationNN
+\|\nabla c_\Scal(x)\|_2\le\|\nabla c(x)\|_2+\|\nabla c_\Scal(x)-\nabla c(x)\|_2  \le \(1+\sqrt{2(\theta_J+\nu_J)}g_\Scal \) \|\nabla c(x)\|_2.
+	\eequationNN
+
+Next, we look into the difference between $\nabla_xL_{[N]}(x,y_{[N]})$ and $\nabla_x L_\Scal(x,y_\Scal)$. We have
+\bequation
+\label{ineq.L.grad.diff}
+\baligned
+	&\left\|\nabla_xL_{[N]}(x,y_{[N]})-\nabla_xL_{\Scal}(x,y_{\Scal})\right\|_2\\
+	&=\|\nabla c(x)y_{[N]}- \nabla c_\Scal(x)y_\Scal\|_2\\
+	&=\|-\nabla c(x)\nabla c(x)^\dag\nabla f(x)+\nabla c_\Scal(x)\nabla c_\Scal(x)^\dag\nabla f(x)\|_2\\
+	&\le \|-\Rcal\(\nabla c_\Scal(x)\)+\Rcal\(\nabla c(x)\)\|_2\|\nabla f(x)\|_2\\
+	&\le \|-\Rcal\(\nabla c_\Scal(x)\)+\Rcal\(\nabla c(x)\)\|_2\sigma_f^{\max}.
+\ealigned
+\eequation
+Here, the third line uses the definition for $y_{[N]}$ and $y_\Scal$. The second to last line uses the definition of $\Rcal$, and the last line uses the bound for $\|\nabla f(x)\|_2$. By choice of $\Scal$ (\ref{ineq.theorem1.S}), the requirement of Lemma \ref{lemma.acute.perturb} is satisfied, and both $\nabla c(x)$ and $\nabla c_\Scal(x)$ are of full column rank. By \cite[Theorem 2.4]{396bf6e1-ef54-3bf6-a49b-862db8404076} and previous bounds, we have
+\bequation
+\label{ineq.theorem1.Rcs.Rc}
+\baligned
+	& \|-\Rcal\(\nabla c_\Scal(x)\)+\Rcal\(\nabla c(x)\)\|_2 \\
+	&= \|-\Rcal\(\nabla c_\Scal(x)\)\(I_n-\Rcal\(\nabla c(x)\)\)\|_2\\
+	&=\|\Rcal\(\nabla c_\Scal(x)\)\Ncal\(\nabla c(x)\)\|_2\le \frac{\sigma_c^{\max} }{\sigma_c^{\min}}\sqrt{2(\theta_J+\nu_J)} g_\Scal=\eta_1g_\Scal.
+\ealigned
+\eequation
+Combining this result with the triangle inequality, we have 
+\begin{align*}
+\nabla_xL_{[N]}(x,y_{[N]})
+&\le\|\nabla_x L_\Scal(x,y_\Scal)\|_2+\left\|\nabla_xL_{[N]}(x,y_{[N]})-\nabla_xL_{\Scal}(x,y_{\Scal})\right\|_2\\
+&\le \|\nabla_x L_\Scal(x,y_\Scal)\|_2+ \sigma_f^{\max}\eta_1 g_\Scal.
+\end{align*}
+
+Hence for any $x\in\R{n}$ satisfies $\|\nabla_x L_\Scal(x,y_\Scal)\|_2\le \alpha- \sigma_f^{\max}\eta_1g_\Scal=\alpha_\Scal$, we have $\|\nabla_x L_{[N]}(x,y_{[N]})\|_2\le  \alpha$.
+In addition, the choice of $\Scal$ gives us that $ \sigma_f^{\max}\eta_1g_\Scal\le\half\alpha$, we have
+\[
+ \alpha_\Scal\ge\half\alpha>0.
+\]
+
+Since the problem (\ref{prob.opt.N}) is $(\alpha,\beta)$-morse, by the definition of morse we have 
+\[
+|d^T\nabla^2_{xx}L_{[N]}(x,y_{[N]} )d|\ge\beta\|d\|_2^2 \text{ for all } d\in\Null(\nabla c(x)^T).
+\]
+Now, for any $d_\Scal\in\Null(\nabla c_\Scal(x)^T)$, we look into the value $|d_\Scal^T\nabla^2_{xx}L_\Scal(x,y_\Scal)d_\Scal|$. We have
+\begin{align*}
+&\left|d_\Scal^T\nabla^2_{xx}L_\Scal(x,y_\Scal)d_\Scal\right|\\
+	&=\left| d^T_\Scal\nabla^2_{xx}L_{[N]}(x,y_{[N]})d_\Scal+d_\Scal^T\nabla^2_{xx}L_\Scal(x,y_\Scal)d_\Scal-d^T_\Scal\nabla^2_{xx}L_{[N]}(x,y_{[N]})d_\Scal\right|\\
+	&\ge \underbrace{\left| d_\Scal^T\nabla^2_{xx}L_{[N]}(x,y_{[N]})d_\Scal\right|}_{(v.1)}-\underbrace{\left|d_\Scal^T\nabla^2_{xx}L_\Scal(x,y_\Scal)d_\Scal-d_\Scal^T\nabla^2_{xx}L_{[N]}(x,y_{[N]})d_\Scal\right|}_{(v.2)}.
+\end{align*}
+Here, we get the third line by adding and subtracting a term and using the triangle inequality. 
+
+Let $\dtilde_\Scal:=\Ncal(\nabla c(x))d_\Scal$ and $r_\Scal:=d_\Scal-\dtilde_\Scal$, and substitue $d_\Scal=\dtilde_\Scal+r_\Scal$ for term $(v.1)$ we have
+\bequation\label{ineq.theorem.v1}
+\baligned
+(v.1)
+&=\left|\dtilde_\Scal^T\nabla^2_{xx}L_{[N]}(x,y_{[N]})\dtilde_\Scal+2\dtilde_\Scal^T\nabla^2_{xx}L_{[N]}(x,y_{[N]})r_\Scal+r_\Scal^T\nabla^2_{xx}L_{[N]}(x,y_{[N]})r_\Scal\right|\\
+&\ge \left|\dtilde_\Scal^T\nabla^2_{xx}L_{[N]}(x,y_{[N]})\dtilde_\Scal\right|-2\|\nabla^2_{xx}L_{[N]}(x,y_{[N]})\|_2\|\dtilde_\Scal\|_2\|r_\Scal\|_2\\
+&\hspace{2em}-\left\|\nabla^2_{xx}L_{[N]}(x,y_{[N]})\|_2\|r_\Scal\right\|_2^2\\
+&\ge \beta\|\dtilde_\Scal\|_2^2-3\|\nabla^2_{xx}L_{[N]}(x,y_{[N]})\|_2\|d_\Scal\|_2\|r_\Scal\|_2.
+\ealigned
+\eequation
+Here, the first equality and inequality follow by adding, subtracting a term, and using the triangle inequality. The second inequality uses the fact that $\|d_\Scal\|_2=\|\dtilde_\Scal\|_2^2+\|r_\Scal\|_2^2$ which gives $\|\dtilde_\Scal\|_2\le\|d_\Scal\|_2$, and substitute this result with the last two terms. Further we have
+\bequationNN
+\baligned
+(v.1)
+&\ge \beta\|\dtilde_\Scal\|_2^2- 3\(\lambda_f^{\max}+\frac{\sqrt{m}\sigma_f^{\max}}{\sigma_c^{\min}\lambda_c^{\max}} g_{\Scal_k})\)\|d_\Scal\|_2\|r_\Scal\|_2\\
+&\ge \beta(1-\eta_1g_\Scal)\|d_\Scal\|_2^2-3 \(\lambda_f^{\max}+\frac{\eta_2}{\sqrt{\mu_H}}g_{\Scal}\)\eta_1g_\Scal\|d_\Scal\|_2^2\\
+&=\( \beta-\(\eta_1\beta+3\eta_1 \lambda_f^{\max}+3\frac{\eta_1\eta_2}{\sqrt{\mu_H}}\)g_\Scal\)\|d_\Scal\|_2^2.
+\ealigned
+\eequationNN
+Here, the first line uses Lemma \ref{lemma.sample.average.result}, the second line uses Lemma \ref{coro.proj.apply}, and the last line rearranges terms.
+
+For the term $(v.2)$, we have
+\bequation\label{ineq.theorem1.v2}
+\baligned
+(v.2)
+&=\left|d_\Scal^T\(\nabla^2_{xx}L_\Scal(x,y_\Scal)-\nabla^2_{xx}L_{[N]}(x,y_{[N]})\)d_\Scal\right|\\
+&=\left|d_\Scal^T\(\sum_{j=1}^my^j_\Scal\nabla^2 c^j_\Scal(x) -\sum_{j=1}^my_{[N]}^j\nabla^2 c^j(x) \)d_\Scal\right|\\
+&\le \left\|\sum_{j=1}^m\(y^j_\Scal\nabla^2 c^j_\Scal(x) -y_{[N]}^j\nabla^2 c^j(x) \)\right\|_2 \left\|d_\Scal\right\|_2^2, 
+\ealigned
+\eequation
+where for the term of Hessian, we have
+\begin{align*}
+	&\left\|\sum_{j=1}^m(y^j_\Scal\nabla^2c_\Scal^j(x)-y_{[N]}^j\nabla^2c ^j(x))\right\|_2\\
+	&=\left\|\sum_{j=1}^m\left(y^j_\Scal\left(\nabla^2c^j_\Scal(x)-\nabla^2c^j(x)\right)\right)+\sum_{j=1}^m\left(\left(y_\Scal^j-y_{[N]}^j\right)\nabla^2c^j(x)\right)\right\|_2\\
+	&\le \sum_{j=1}^m\left\|y_\Scal^j\right\|_2\left\|\nabla^2c_\Scal^j(x)-\nabla^2c^j(x)\right\|_{2}+\sum_{j=1}^m\left\|y_\Scal^j-y_{[N]}^j\right\|_2\left\|\nabla^2c^j(x)\right\|_2\\
+	&\le\sqrt{m\mu_H}\lambda_c^{\max} g_\Scal\left\|y_\Scal\right\|_2+\sqrt{m} \lambda_c^{\max} \left\|y_\Scal-y_{[N]}\right\|_2\\
+	&\le\sqrt{m\mu_H}\lambda_c^{\max} g_\Scal\left\|y_{[N]}\right\|_2 +(1+\sqrt{\mu_H}g_\Scal)\sqrt{m} \lambda_c^{\max} \left\|y_\Scal-y_{[N]}\right\|_2\\
+	&\le\sqrt{m\mu_H}\frac{\lambda_c^{\max}\sigma_f^{\max}}{\sigma_c^{\min}} g_\Scal+(1+\sqrt{\mu_H}g_\Scal)\sqrt{m}\frac{3\sigma_f^{\max} \lambda_c^{\max} \sigma_c^{\max}}{2(\sigma_c^{\min})^2}\sqrt{ 2(\theta_J+\nu_J)}g_\Scal\\
+	&=\eta_2g_\Scal+\frac{3\eta_1\eta_2}{2\sqrt{\mu_H}}g_\Scal+\frac{3\eta_1\eta_2}{2}g_\Scal^2.
+	\end{align*}
+Here, the second is to add, subtract, and rearrange terms. The third line uses triangle inequality and submultiplicity. The fourth line uses similar arguments as in $(v.1)$. The fifth line uses the fact that $\|y_\Scal\|_2\le\|y_{[N]}\|_2+\|y_\Scal-y_{[N]}\|_2$ and rearranges terms. The last two lines use Lemma \ref{lemma.bound.y.y_p} since $g_\Scal\le\frac{1}{3\eta_1}$, and the definition of $(\eta_1,\eta_2)$.  
+
+Combining the above results for $(v.1,v.2)$, we have
+\bequationNN
+\baligned
+&\left|d_\Scal^T\nabla^2_{xx}L_\Scal(x,y_\Scal)d_\Scal\right|\\
+&\ge \( \beta-\(\eta_1\beta+\eta_2 +3\eta_1 \lambda_f^{\max}+\frac{9\eta_1\eta_2}{2\sqrt{\mu_H}}\)g_\Scal-\frac{3}{2} \eta_1\eta_2 g_\Scal^2\)\|d_\Scal\|_2^2\\
+&= \( \beta-\(\eta_1\beta+\eta_3\)g_\Scal-\frac{3}{2} \eta_1\eta_2g_\Scal^2\)\|d_\Scal\|_2^2.
+\ealigned
+\eequationNN
+By the requirement of $|\Scal|$ that , we have
+\[
+\(\(\eta_1\beta+\eta_3\)g_\Scal+\frac{3}{2} \eta_1\eta_2 g_\Scal^2\)\le\half\beta,
+\]
+where the nonnegative solution for $g_\Scal$ is
+\[
+0\le g_\Scal\le \frac{-(\eta_1\beta+\eta_3)+\sqrt{(\eta_1\beta+\eta_3)^2+3\eta_1\eta_2\beta}}{3\eta_1\eta_2},
+\]
+where the right-hand side can be bounded below by
+\begin{align*}
+	&\frac{-(\eta_1\beta+\eta_3)+\sqrt{(\eta_1\beta+\eta_3)^2+3\eta_1\eta_2\beta}}{3\eta_1\eta_2}\\
+	&= \frac{ 3\eta_1\eta_2\beta}{9\eta_1\eta_2\((\eta_1\beta+\eta_3)+\sqrt{(\eta_1\beta+\eta_3)^2+3\eta_1\eta_2\beta}\)}\\
+	&\ge \frac{ \beta}{2\sqrt{(\eta_1\beta+\eta_3)^2+3\eta_1\eta_2\beta}}.
+\end{align*}
+Here, the second line multiplies a $\(\eta_1\beta+\eta_3)+\sqrt{(\eta_1\beta+\eta_3)^2+3\eta_1\eta_2\beta}\)$ at both the numerator and denominator.
+Hence the last requirement for $\Scal$ ensures that.
+\end{proof}
+
+% the third line uses triangular inequality, and the last line uses the fact that $\Ncal(\nabla c(x))d_\Scal\in\Null(\nabla c(x)^T)$ and the definition of Morse.
+%
+%By Assumption \ref{ass.boundness} and Lemma \ref{lemma.sample.average.result} we have
+%\[
+%\max_i\left\{\left\|(\nabla^2c_\Scal^i(x)-\nabla^2c^i(x))\right\|_{2}\right\}\le \sqrt{\mu_H}g_\Scal\text{ and }\max_i\left\{\left\|\nabla^2c^i(x)\right\|_2\right\}\le\lambda_c^{\max}.
+%\]
+%In addition, it is easy to see that $r_\Scal=\Rcal(\nabla c(x))d_\Scal$ and $r_\Scal^T\dtilde_\Scal=0$. Plugging the above bounds into Lemma \ref{lemma.bound.hess.cond} gives 
+%\begin{equation}
+%\label{ineq: (i)}
+%\begin{aligned}
+%	(v)
+%	&\le\underbrace{3\|\nabla^2f(x)\|_2 \|d_\Scal\|_2\|r_\Scal\|_2}_{(v.1)}\\
+%	&\hspace{2em}+\underbrace{\sqrt{m}\left(\|y_{[N]}\|_2\sqrt{\mu_H}g_\Scal+\|y_\Scal-y_{[N]}\|_2(\lambda_c^{\max}+\sqrt{\mu_H}g_\Scal)\right)\|d_\Scal\|_2^2}_{(v.2)}\\
+%	&\hspace{2em}+\underbrace{3\sqrt{m}\left(\lambda_c^{\max}+\sqrt{\mu_H}g_\Scal\right)\left(\|y_{[N]}\|_2+ \|y_{[N]}-y_\Scal\|_2\right)\|d_\Scal\|_2\|r_\Scal\|_2}_{(v.3)}.
+%\end{aligned}
+%\end{equation}
+%Now, we are going to bound the right-hand side of (\ref{ineq: (i)}) term by term.
+%
+%For $(v.1)$, plugging Assumption \ref{ass.boundness} and Corollary \ref{coro.proj.apply} for $\|\nabla^2f(x)\|_2$, and $\|r_\Scal\|_2$, we have
+%\begin{align*}
+%(v.1)&\le3\lambda_f^{\max}\eta_1g_\Scal\|d_\Scal\|_2^2.
+%\end{align*}
+%For $(v.2)$, note that by the second requirement for $\Scal$ we have $\sqrt{\mu_H}g_\Scal\le\lambda_c^{\max}$, which further gives $(\lambda_c^{\max}+\sqrt{\mu_H}g_\Scal)\le2\lambda_c^{\max}$. We have
+%\bequationNN
+%\baligned
+%(v.2)
+%&\le \sqrt{m} \frac{\sigma_f^{\max}}{\sigma_c^{\min}}\sqrt{\mu_H}g_\Scal\|d_\Scal\|_2^2+ \frac{3\sqrt{m}\sigma_f^{\max}\lambda_c^{\max} }{\sigma_c^{\min}}\eta_1g_\Scal\|d_\Scal\|_2^2\\
+%&=\frac{\sqrt{m}\sigma_f^{\max}}{\sigma_c^{\min}} \(\sqrt{\mu_H}+  3 \lambda_c^{\max} \eta_1\)g_\Scal\|d_\Scal\|_2^2.
+%\ealigned
+%\eequationNN
+%For the term $(v.3)$, by the third requirement for $\Scal$, we have $\|y_{[N]}-y_\Scal\|_2\le\frac{\sigma_f^{\max}}{\sigma_c^{\min}} $. Combining with $\sqrt{\mu_H}g_\Scal\le\lambda_c^{\max}$ and Corollary \ref{coro.proj.apply}, we have
+%\begin{align*}
+%	(v.3)
+%	&\le\frac{12\sqrt{m} \lambda_c^{\max} \sigma_f^{\max}}{\sigma_c^{\min}}\eta_1g_\Scal \|d_\Scal\|_2^2.
+%\end{align*}
+%Combining $(v.1),(v.2)$ and $(v.3)$, we have a bound for $(v)$, that is,
+%\begin{align*}
+%	(v)&\le \underbrace{\(\eta_1\(3\lambda_f^{\max}+15\sqrt{m}\frac{\sigma_f^{\max}\lambda_c^{\max}}{\sigma_c^{\min}}\)  +\frac{\sqrt{m}\sigma_f^{\max}}{\sigma_c^{\min}} \sqrt{\mu_H}\)}_{\eta_2}  g_\Scal \|d_\Scal\|_2^2.
+%\end{align*}
+%Recall that $\|\dtilde_\Scal\|_2^2=\|d\|_2^2-\|r_\Scal\|_2^2$, and by Corollary \ref{coro.proj.apply}, we have
+%\begin{align*}
+%\left|d_\Scal^T\nabla^2_{xx}L_\Scal(x,y_\Scal)d_\Scal\right|
+%	&\ge \beta\left\| \dtilde_\Scal\right\|_2^2- \eta_2g_\Scal \|d_\Scal\|_2^2\\
+%	&\ge \(\(1-\eta_1g_\Scal\)\beta-\eta_2g_\Scal\)\|d_\Scal\|_2^2=\beta_\Scal\|d_\Scal\|_2^2.	
+%	\end{align*}
+%	
+%Moreover, by the third choice of $\Scal$ we have $\eta_1g_\Scal\le\frac{2}{3}$, we have
+%\begin{align*}
+%	\beta_\Scal\ge \frac{1}{3}\beta-\eta_2g_\Scal.
+%\end{align*}
+%And by the last choice of $\Scal$ such that $\eta_2g_\Scal\le\frac{1}{6}\beta$, we further have:
+%\begin{align*}
+%	\beta_\Scal\ge\frac{1}{6}\beta>0.
+%\end{align*}
+
+\begin{theorem}
+Under Assumption \ref{ass.boundness} and Assumption \ref{ass.func distribution} where the constants $(\sigma_c^{\min},\sigma_c^{\max},\sigma_f^{\max},\lambda_c^{\max},\lambda_f^{\max},\theta_J,\nu_J,\mu_H )$ exist, and assume problem (\ref{prob.opt.N}) is $(\alpha,\beta)$-morse.  Define tolerances 
+\[
+\epsilon_k:=\eta_1\sigma_f^{\max}\sqrt{\frac{N(N-|\Scal_k|)}{|\Scal_k|^2}}\text{ and }\varepsilon_k:=\eta_1 \lambda_f^{\max}\sqrt{\frac{N(N-|\Scal_k|)}{|\Scal_k|^2}},\ \forall\ k\in[K].
+\]
+Let (\ref{prob.opt.N}) proceed with Algorithm \ref{alg.pcsm}. Then, for all sample sets $\Scal_k\subseteq[N]$ satisfies
+\bequation
+\label{eq.theorem2.S}
+\sqrt{\frac{N(N-|\Scal_k|)}{|\Scal_k|^2}}\le
+\min\left\{\frac{1}{3\eta_1},\frac{\alpha}{4\eta_1\sigma_f^{\max}},\frac{\beta}{4 \sqrt{\(\eta_1\beta+\eta_3\)^2+\frac{3}{2}\eta_1\eta_2\beta}}\right\},
+\eequation
+if $x_{\Scal_k}\in\R{n}$ is a $(\epsilon_k,\varepsilon_k)$ stationary solution, the $x_{\Scal_k}$ must satisfy the following for problem (\ref{prob.opt.S}) with $\Scal=\Scal_{k+1}$
+\begin{align*}
+	&\|\nabla_xL_{\Scal_{k+1}}(x_{\Scal_{k}},y_{\Scal_{k+1}}(x_{\Scal_k}))\|_2 \le\alpha_{\Scal_{k+1}}\text{, and }\\
+	& d^T\nabla^2_{xx}L_{\Scal_{k+1}}(x_{\Scal_{k}},y_{\Scal_{k+1}}(x_{\Scal_k}))d\ge \beta_{\Scal_{k+1}}\|d\|_2^2,\forall \ d\in\Null(\nabla c_{\Scal_{k+1}}(x_{\Scal_k})^T).
+\end{align*}
+\end{theorem}
+
+\begin{proof}
+Let the dual variables $y_{[N]}$ and $y_{\Scal_k}$ be defined as in (\ref{eq.lsm}). In addition, define $z_{\Scal_{k+1}}=-\nabla c_{\Scal_{k+1}}(x_{\Scal_{k}})^\dag\nabla f(x_{\Scal_{k}})$. Similar to (\ref{ineq.L.grad.diff}) we have
+\begin{align*}
+	&\|\nabla_xL_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})-\nabla_xL_{\Scal_{k}}(x_{\Scal_{k}},y_{\Scal_{k}})\|_2\\
+	&\le  \|\Rcal( \nabla c_{\Scal_{k+1}}(x_{\Scal_{k}}))-\Rcal(\nabla c_{\Scal_{k}}(x_{\Scal_{k}}))\|_2\|\nabla f(x_{\Scal_{k}})\|_2\\
+	&\le \( \|\Rcal(\nabla c_{\Scal_{k+1}}(x_{\Scal_{k}}))-\Rcal(\nabla c (x_{\Scal_{k}}))\|_2\right.\\
+	&\hspace{2em}\left.+\|\Rcal(\nabla c (x_{\Scal_{k}}))-\Rcal(\nabla c_{\Scal_{k}}(x_{\Scal_{k}}))\|_2\)\|\nabla f(x_{\Scal_{k}})\|_2.
+\end{align*}
+Here, the last inequality uses the triangle inequality. In (\ref{ineq.theorem1.Rcs.Rc}) we already have
+\[
+\|\Rcal\(\nabla c_\Scal(x)\)-\Rcal\(\nabla c(x)\)\|_2 \le\eta_1 g_\Scal.
+\]
+Note the right-hand side depends on $g_\Scal$, which by definition decreases when $|\Scal|$ increases. Hence we have
+\begin{align*}
+	\|\nabla_xL_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})-\nabla_xL_{\Scal_{k}}(x_{\Scal_{k}},y_{\Scal_{k}})\|_2\le 2\eta_1\sigma_f^{\max}g_\Scal,
+\end{align*}
+which further gives us
+\begin{align*}
+	\|\nabla_xL_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})\|_2
+	&\le  \|\nabla_xL_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})-\nabla_xL_{\Scal_{k}}(x_{\Scal_{k}},y_{\Scal_{k}})\|_2\\
+	&\hspace{2em}+\|\nabla_xL_{\Scal_{k}}(x_{\Scal_{k}},y_{\Scal_{k}})\|_2\\
+	&\le3\eta_1\sigma_f^{\max}g_{\Scal_k}\le\frac{3}{4}\alpha.
+\end{align*}
+Here, the first inequality uses the triangle inequality. The second inequality combines with the fact that $x_{\Scal_k}$ is a $(\epsilon_k,\varepsilon_k)$ stationary point, and the last inequality comes from the first requirement for $|\Scal|$ that $\eta_1\sigma_f^{\max}g_{\Scal_k}\le\frac{1}{4}\alpha.$.
+ 
+ Moreover, the same requirement for $|\Scal|$ gives us
+\[
+\alpha_{\Scal_k}=\alpha-\eta_1\sigma_f^{\max}g_{\Scal_k}\ge\frac{3}{4}\alpha,
+\]
+and combining with the fact that $\alpha_{\Scal}$ decreases when $|\Scal|$ increases, we have
+\bequation
+\label{ineq.S.k+1.grad.cond}
+\|\nabla_xL_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})\|_2\le\alpha_{\Scal_k}\le\alpha_{\Scal_{k+1}}.
+\eequation
+
+Now, we turn to the condition for hessian. Since the subproblem for $\Scal_{k+1}$ is $(\alpha_{\Scal_{k+1}},\beta_{\Scal_{k+1}})$-morse and with (\ref{ineq.S.k+1.grad.cond}), we have
+\[
+\left|d_{\Scal_{k+1}}^T\nabla^2_{xx} L_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})d_{\Scal_{k+1}}\right|\ge \beta_{\Scal_{k+1}}\|d_{\Scal_{k+1}}\|_2^2,\ \forall d_{\Scal_{k+1}}\in\Null(\nabla c_{\Scal_{k+1}}(x_{\Scal_k})^T).
+\]
+
+ Similar to the analysis for Theorem (\ref{thero: emprical morse}), define $\dbar_{\Scal_{k+1}}:=\Ncal(\nabla c_{\Scal_{k}}(x_{\Scal_{k}}))d_{\Scal_{k+1}}$, by triangle inequality we have
+\begin{align*}
+&d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})d_{\Scal_{k+1}}\\
+	&\ge  \dbar_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k}}(x_{\Scal_{k}},y_{\Scal_{k}})\dbar_{\Scal_{k+1}} \\
+	&\hspace{2em} -\underbrace{\left|d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})d_{\Scal_{k+1}}-\dbar_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k}}(x_{\Scal_{k}},y_{\Scal_{k}})\dbar_{\Scal_{k+1}}\right|}_{(vi)}\\
+	&\ge -\varepsilon_k\|d_{\Scal_{k+1}}\|_2^2-(vi).
+\end{align*}
+Here, the last line uses the termination condition (\ref{eq.soc.S.approx.2}) and the fact that $\|\dbar_{\Scal_{k+1}}\|_2^2\le \left\|d_{\Scal_{k+1}}\right\|_2^2 $.
+
+To give a bound for $(vi)$, we add and subtract four terms. Define the variable $z_{[N]}:=-\nabla c(x_{\Scal_k})^\dag\nabla f(x_{\Scal_k})$, following the triangle inequality, we have
+\bequationNN
+\baligned
+(vi)
+&=\left|d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})d_{\Scal_{k+1}}-d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{[N]}(x_{\Scal_{k}},z_{[N]})d_{\Scal_{k+1}}\right.\\
+&\hspace{2em} +d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{[N]}(x_{\Scal_{k}},z_{[N]})d_{\Scal_{k+1}}-\dbar_{\Scal_{k+1}}^T\nabla^2_{xx}L_{[N]}(x_{\Scal_{k}},z_{[N]})\dbar_{\Scal_{k+1}}\\
+&\hspace{2em}\left.+\dbar_{\Scal_{k+1}}^T\nabla^2_{xx}L_{[N]}(x_{\Scal_{k}},z_{[N]})\dbar_{\Scal_{k+1}}-\dbar_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k}}(x_{\Scal_{k}},y_{\Scal_{k}})\dbar_{\Scal_{k+1}}\right|\\
+&\le \underbrace{\left|d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})d_{\Scal_{k+1}}-d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{[N]}(x_{\Scal_{k}},z_{[N]})d_{\Scal_{k+1}}\right|}_{(vi.1)}\\
+&\hspace{2em} +\underbrace{\left|d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{[N]}(x_{\Scal_{k}},z_{[N]})d_{\Scal_{k+1}}-\dbar_{\Scal_{k+1}}^T\nabla^2_{xx}L_{[N]}(x_{\Scal_{k}},z_{[N]})\dbar_{\Scal_{k+1}}\right|}_{(vi.2)}\\
+&\hspace{2em}+\underbrace{\left|\dbar_{\Scal_{k+1}}^T\nabla^2_{xx}L_{[N]}(x_{\Scal_{k}},z_{[N]})\dbar_{\Scal_{k+1}}-\dbar_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k}}(x_{\Scal_{k}},y_{\Scal_{k}})\dbar_{\Scal_{k+1}}\right|}_{(vi.3)}.
+\ealigned
+\eequationNN
+Thanks to the previous result in Theorem \ref{thero: emprical morse} on the term $(v.2)$, we have
+\bequation
+\label{ineq.bound vi}
+\baligned
+&(vi.1)\le\(\eta_2g_{\Scal_{k+1}}+\frac{3\eta_1\eta_2}{2\sqrt{\mu_H}}g_{\Scal_{k+1}}+\frac{3\eta_1\eta_2}{2}g_{\Scal_{k+1}}^2\)\|d_{\Scal_{k+1}}\|_2^2\text{, and }\\
+&(vi.3)\le\(\eta_2g_{\Scal_{k}}+\frac{3\eta_1\eta_2}{2\sqrt{\mu_H}}g_{\Scal_{k}}+\frac{3\eta_1\eta_2}{2}g_{\Scal_{k}}^2\)\|\dbar_{\Scal_{k+1}}\|_2^2.
+\ealigned
+\eequation
+For $(vi.2)$, by Lemma \ref{lemma.sample.average.result} we have $\|\nabla^2_{xx}L_{[N]}(x_{\Scal_{k}},z_{[N]})\|_2 \le \lambda_f^{\max}+\frac{\eta_2}{\sqrt{\mu_H}}$,
+and that
+\bequationNN
+\baligned
+\|d_{\Scal_{k+1}}- \dbar_{\Scal_{k+1}}\|_2
+&=\|d_{\Scal_{k+1}}-\Ncal(\nabla c_{\Scal_k}(x_{\Scal_k}))d_{\Scal_{k+1}}\|_2\\
+&= \|\Rcal(\nabla c_{\Scal_{k}}(x_{\Scal_{k}}))d_{\Scal_{k+1}}\|_2\\
+&\le \|\Rcal(\nabla c(x_{\Scal_{k}}))d_{\Scal_{k+1}}\|_2+\|\(\Rcal(\nabla c(x_{\Scal_{k}}))-\Rcal(\nabla c_{\Scal_k}(x_{\Scal_{k}}))\)d_{\Scal_{k+1}}\|_2\\
+&\le 2\eta_1 g_{\Scal_{k}}\|d_{\Scal_{k+1}}\|_2.
+\ealigned 
+\eequationNN
+Here, the first line uses the definition of $ \dbar_{\Scal_{k+1}}$. The second line uses the definition of $\Rcal$. The third line uses the triangle inequality. The last line uses Lemma \ref{coro.proj.apply}, and inequality (\ref{ineq.theorem1.Rcs.Rc}). In addition, the second line also gives us $\|d_{\Scal_{k+1}}- \dbar_{\Scal_{k+1}}\|_2\le\|d_{\Scal_{k+1}}\|_2$.
+
+Combining all the above results, noticing that $g_\Scal$ is nondecreasing with respect to $|\Scal|$, which gives $g_{\Scal_{k+1}}\le g_{\Scal_k}$. And remember that $\|\dbar_{\Scal_{k+1}}\|_2\le\|d_{\Scal_{k+1}}\|_2$ and $\varepsilon_k=\eta_1 \lambda_f^{\max}g_{\Scal_k}$, we have
+\bequationNN
+\baligned
+&d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})d_{\Scal_{k+1}}\\
+	&\ge -\eta_1 \lambda_f^{\max}g_{\Scal_k} \left\|d_{\Scal_{k+1}}\right\|_2^2- 2\(\eta_2+\frac{3\eta_1\eta_2}{2\sqrt{\mu_H}} +\frac{3\eta_1\eta_2}{2} g_{\Scal_{k}}\)g_{\Scal_{k}}\|d_{\Scal_{k+1}}\|_2^2\\
+	&\hspace{2em}-\(\lambda_f^{\max}+\frac{\eta_2}{\sqrt{\mu_H}}\)2\eta_1 g_{\Scal_{k}}\|d_{\Scal_{k+1}}\|_2^2\\
+	&= -\(\(3\eta_1 \lambda_f^{\max}+2\eta_2+\frac{5\eta_1\eta_2}{\sqrt{\mu_H}} \)g_{\Scal_k} +3\eta_1\eta_2g_{\Scal_k} ^2  \) \left\|d_{\Scal_{k+1}}\right\|_2^2\\
+	&\ge -\(2\eta_3g_{\Scal_k} +3\eta_1\eta_2g_{\Scal_k} ^2  \)\left\|d_{\Scal_{k+1}}\right\|_2^2.
+	\ealigned
+\eequationNN
+Similar to the analysis for Theorem \ref{thero: emprical morse}. Recall $\beta_\Scal=\beta-\(\(\eta_1\beta+\eta_3\)g_{\Scal_k}+\frac{3}{2} \eta_1\eta_2g_{\Scal_k}^2\)$ and $\beta_{\Scal_{k+1}}\ge\beta_{\Scal_k}$. To ensure $\beta_{\Scal_{k+1}}\ge\frac{3}{4}\beta$, we need $\frac{1}{4}\beta\ge \(\eta_1\beta+\eta_3\)g_{\Scal_k}+\frac{3}{2} \eta_1\eta_2g_{\Scal_k}^2$, whose nonnegative solution is
+\[
+g_{\Scal_k}\le\frac{-\(\eta_1\beta+\eta_3\)+\sqrt{\(\eta_1\beta+\eta_3\)^2+\frac{3}{2}\eta_1\eta_2\beta}}{3\eta_1\eta_2},
+\]
+and it is ensured by
+\[
+g_{\Scal_k}\le\frac{\beta}{4 \sqrt{\(\eta_1\beta+\eta_3\)^2+\frac{3}{2}\eta_1\eta_2\beta}}.
+\]
+Moreover, we have
+\begin{align*}
+	&-\(2\eta_3g_{\Scal_k} +3\eta_1\eta_2g_{\Scal_k} ^2\) \ge -2\(\(\eta_3+\eta_1\beta\)g_{\Scal_k}-\frac{3}{2} \eta_1\eta_2g_{\Scal_k}^2\) \ge -\half\beta>-\beta_{\Scal_{k+1}}.
+\end{align*}
+The above analysis gives us that $d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})d_{\Scal_{k+1}}>-\beta_{\Scal_{k+1}}\|d_{\Scal_{k+1}}\|_2^2$.
+However, since subproblem (\ref{prob.opt.S}) for $\Scal=\Scal_{k+1}$ is $(\alpha_{k+1},\beta_{k+1})$-morse, which says that $|d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})d_{\Scal_{k+1}}|\ge\beta_{\Scal_{k+1}}\|d_{\Scal_{k+1}}\|_2^2$. Combining these two, we must have
+\[
+d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})d_{\Scal_{k+1}}\ge\beta_{\Scal_{k+1}}\|d_{\Scal_{k+1}}\|_2^2,
+\]
+which completes proof.
+\end{proof}
+
+{\color{red} \noindent\makebox[\linewidth]{\rule{0.6\paperwidth}{1pt}}}
+\bassumption\label{ass.func distribution}
+We make the following assumptions for each element of the expected constraint function, ci. There exists a $(r,\tau)\in\Rmbb_{>0}\times\Rmbb_{>0}$ such that for all $(x,i)\in\Bmbb^n(r)\times\{1,\cdots,m\}$,\begin{itemize}
+	\item[(1).] the gradient of $c^i(x)$ is $\tau^2$-sub-Gaussian. Namely, for any $a\in\R{n}$,
+	\[
+	\Embb_\xi\left[\exp\left(a^T\left(\nabla c^i(x;\xi)-\Embb_\xi\left[\nabla c^i(x;\xi)\right]\right)\right)\right]    \le \exp\left(\frac{\tau^2\|x\|_2^2}{2}\right).
+	\]
+	$z_{\xi_j}$ finite sample distribution
+	\item[(2).] the Hessian of $c^i(x)$, evaluated on a unit vector, is $\tau^2$-sub-exponential. Namely, for any $a\in\Bmbb^n(1)$, let $z_{a,x,\xi}:=a^T\nabla^2 c^i(x;\xi)a$, then
+	\[
+	\Embb_\xi\left[\exp\left(\frac{1}{\tau^2}\left|z_{a,x,\xi}-\Embb[z_{a,x,\xi}]\right|\right)\right]\le2.
+	\]
+\item[(3).]
+within $\Bmbb^n(r)$, the Hessian of $c^i$ is $L$-Lipschitz continuous, and the gradient of $c^i$ is $\lambda_c^{\max}$-Lipschitz continuous. Moreover, there exists a constant $h>0$ such that
+\[
+L\le\tau^3n^{h},\text{and }\lambda_c^{\max}\le\tau^2n^h.
+\]
+	
+\end{itemize} 
+\eassumption   
+\btheorem
+\label{theo.sample-average-result}
+Under Assumption.\ref{ass.func distribution} and let $(n,r,\tau,h)\in\Nmbb\times\Rmbb_{>0}\times\Rmbb_{>0}\times\Rmbb_{>0}$ be defined in the same way. There exists a universal constant $C_0$ and for any $\delta\in[0,1]$ let $C:=C_0\max\{h,\log\frac{r\tau}{\delta},1\}$.
+ Then, for any sample size $p\ge Cn\log n$, the following holds with probability at least $(1-\delta)$:
+\begin{equation}
+	\label{ineq:assump on conerg}
+	\begin{aligned}
+		&\sup_{\forall x\in\Bmbb^n(r)}\|\nabla c(x)-\nabla c_p(x)\|_2\le g(p):=\tau\sqrt{\frac{Cn\log p}{p}}\text{ and}\\
+		&\sup_{i\in\{1,\cdots, m\}}\left\{\sup_{\forall x\in\Bmbb^n(r)}\|\nabla^2 c^i_p(x)-\nabla^2c^i(x)\|_2\right\}\le G(p):=\tau^2\sqrt{\frac{Cn\log p}{p}}\text{}.	
+		\end{aligned}
+\end{equation}
+\etheorem
+
+\begin{lemma}
+\label{lemma:c_p c_q}
+Under Assumption.\ref{ass.func distribution} and let $(n,r,\tau,h)\in\Nmbb\times\Rmbb_{>0}\times\Rmbb_{>0}\times\Rmbb_{>0}$ be defined in the same way. Let $(C,p)$ be defined in the same way as Theorem.\ref{theo.sample-average-result}, then the following holds with probability at least $(1-\delta)$:
+	\begin{equation}
+	\label{ineq:diff p-q result}
+	\begin{aligned}
+		&\sup_{\forall x\in\Bmbb^n(r)}\left\|\frac{1}{p}\sum_{i\in\Scal_p}\nabla c(x,\xi_i)-\frac{1}{2p}\sum_{i\in\Scal_{2p}}\nabla c(x,\xi_i)\right\|_2\le  \tau\sqrt{\frac{Cn\log p}{p}}\text{ and}\\
+		&\sup_{i\in\{1,\cdots, m\}}\left\{\sup_{\forall x\in\Bmbb^n(r)}\left\|\frac{1}{p}\sum_{i\in\Scal_p}\nabla^2 c^i(x,\xi_i)-\frac{1}{2p}\sum_{i\in\Scal_{2p}}\nabla^2 c^i(x,\xi_i)\right\|_{op}\right\}\le  \tau^2\sqrt{\frac{Cn\log p}{p}}.	
+		\end{aligned}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+	......
+\end{proof}
+
+%*********
+% Section
+%*********
+\section{Numerical Results}\label{sec.numerical}
+
+%*********
+% Section
+%*********
+\section{Conclusion}\label{sec.conclusion}
+
+%*********
+% Section
+%*********
+\section{Acknowledgments}\label{sec.acknowledgments}
+
+This work was supported by Office of Naval Research award N00014-24-1-2703.
