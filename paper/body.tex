@@ -64,21 +64,21 @@ For use in our proposed algorithm and our analysis of it, let us introduce stati
 where $y \in \R{m}$ is referred to as a vector of Lagrange multipliers or dual variables.  Second-order necessary conditions for optimality for \eqref{prob.opt.S} can then be stated as
 \bsubequations\label{eq.soc.S}
   \begin{align}
-    \nabla_x L_\Scal(x,y) &= 0 \label{eq.soc.S.1} \\ \text{and}\ \ 
+    \nabla_x L_\Scal(x,y) &= 0,\  \nabla_y L_\Scal(x,y) = c_\Scal(x)=0,\label{eq.soc.S.1} \\ \text{and}\ \ 
     d^T \nabla_{xx}^2 L_\Scal(x,y)d &\geq 0\ \ \text{for all}\ \ d \in \Null(\nabla c_\Scal(x)^T). \label{eq.soc.S.2}
   \end{align}
 \esubequations
 We refer to any point $(x,y)$ satisfying \eqref{eq.soc.S.1} as a first-order stationary point with respect to problem~\eqref{prob.opt.S}, and we refer to any point satisfying both \eqref{eq.soc.S.1} and \eqref{eq.soc.S.2} (i.e., satisfying \eqref{eq.soc.S}) as a second-order stationary point with respect to problem~\eqref{prob.opt.S}.  In addition, consistent with the literature on worst-case complexity bounds for nonconvex smooth optimization, we say that a point $(x,y)$ is $(\epsilon,\varepsilon)$-stationary with respect to problem~\eqref{prob.opt.S} for some $(\epsilon,\varepsilon) \in \R{}_{>0} \times \R{}_{>0}$ if and only if
 \bsubequations\label{eq.soc.S.approx}
   \begin{align}
-    \|\nabla_x L_\Scal(x,y)\| &\leq \epsilon \label{eq.soc.S.approx.1} \\ \text{and}\ \ 
-    d^T \nabla_{xx}^2 L_\Scal(x,y)d &\geq -\varepsilon\ \ \text{for all}\ \ d \in \Null(\nabla c_\Scal(x)^T). \label{eq.soc.S.approx.2}
+    \|\nabla_x L_\Scal(x,y)\| &\leq \epsilon,\ \|\nabla_y L_\Scal(x,y)\| \leq \epsilon, \label{eq.soc.S.approx.1} \\ \text{and}\ \ 
+    d^T \nabla_{xx}^2 L_\Scal(x,y)d &\geq -\varepsilon\|d\|_2^2\ \ \text{for all}\ \ d \in \Null(\nabla c_\Scal(x)^T). \label{eq.soc.S.approx.2}
   \end{align}
 \esubequations
 
-Generally speaking, an algorithm for solving \eqref{prob.opt.S} can be a \emph{primal} method that might only generate a sequence of primal iterates $\{x_k\}$, or it can be a \emph{primal-dual} method that generates a sequence of primal and dual iterate pairs $\{(x_k,y_k)\}$.  For an application of our proposed algorithm, either type of method can be employed, but for certain results in our analysis we refer to properties of \emph{least-square multipliers} corresponding to a given primal point $x \in \R{n}$.  Assuming that the Jacobian of~$c_\Scal$ at~$x$, namely, $\nabla c_\Scal(x)^T$, has full row rank, the least-squares multipliers with respect to $x$ are given by $y(x) \in \R{m}$ that minimizes $\|\nabla_x L(x,\cdot)\|^2$, which is given by
+Generally speaking, an algorithm for solving \eqref{prob.opt.S} can be a \emph{primal} method that might only generate a sequence of primal iterates $\{x_k\}$, or it can be a \emph{primal-dual} method that generates a sequence of primal and dual iterate pairs $\{(x_k,y_k)\}$.  For an application of our proposed algorithm, either type of method can be employed, but for certain results in our analysis we refer to properties of \emph{least-square multipliers} corresponding to a given primal point $x \in \R{n}$.  Assuming that the Jacobian of~$c_\Scal$ at~$x$, namely, $\nabla c_\Scal(x)^T$, has full row rank, the least-squares multipliers with respect to $x$ are given by $y_\Scal(x) \in \R{m}$ that minimizes $\|\nabla_x L(x,\cdot)\|^2$, which is given by
 \begin{equation}\label{eq.lsm}
-  y(x) = - (\nabla c_\Scal(x)^T \nabla c_\Scal(x))^{-1} \nabla c_\Scal(x)^T \nabla f(x) = - \nabla c_\Scal(x)^\dag \nabla f(x).
+  y_\Scal(x) = - (\nabla c_\Scal(x)^T \nabla c_\Scal(x))^{-1} \nabla c_\Scal(x)^T \nabla f(x) = - \nabla c_\Scal(x)^\dag \nabla f(x).
 \end{equation}
 
 Our proposed method is stated as Algorithm~\ref{alg.pcsm} below.
