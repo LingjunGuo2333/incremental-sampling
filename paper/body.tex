@@ -41,7 +41,9 @@ Our proposed algorithm is designed to solve a sample average approximation (SAA)
 \bequation\label{prob.expected}
   \min_{x \in \R{n}}\ f(x)\ \st\ \cbar(x) = 0,
 \end{equation}
-where the objective and constraint functions, i.e., $f : \R{n} \to \R{}$ and $\cbar : \R{n} \to \R{m}$, respectively, are continuously differentiable, $m \leq n$, and the constraint function $c$ is defined by an expectation.  Formally, with respect to a random variable $\omega$ defined by a probability space $(\Omega,\Fcal,\P)$, the expectation function $\E$ defined by $\P$, and $\Cbar : \R{n} \times \Omega \to \R{m}$, the constraint function $\cbar$ is defined by $\cbar(x) = \E[\Cbar(x,\omega)]$ for all $x \in \R{n}$.  The SAA of problem~\eqref{prob.expected} that our algorithm is designed to solve is defined with respect to a sample of $N \in \N{}$ realizations of the random variable $\omega$, say, $\{\omega_i\}_{i\in[N]}$.  Defining the SAA constraint function $c : \R{n} \to \R{m}$ for all $x \in \R{n}$ by
+where the objective and constraint functions, i.e., $f : \R{n} \to \R{}$ and $\cbar : \R{n} \to \R{m}$, respectively, are twice-continuously differentiable, $m \leq n$, and the constraint function~$c$ is defined by an expectation.  Formally, with respect to a random variable $\omega$ defined by a probability space $(\Omega,\Fcal,\P)$, expectation $\E$ defined by $\P$, and $\Cbar : \R{n} \times \Omega \to \R{m}$, the constraint function $\cbar$ is defined by $\cbar(x) = \E[\Cbar(x,\omega)]$ for all $x \in \R{n}$.
+
+The SAA of problem~\eqref{prob.expected} that our algorithm is designed to solve is defined with respect to a sample of $N \in \N{}$ realizations of the random variable $\omega$, say, $\{\omega_i\}_{i\in[N]}$.  Defining the SAA constraint function $c : \R{n} \to \R{m}$ for all $x \in \R{n}$ by
 \bequationNN
   c(x) = \frac1N \sum_{i=1}^N c_i(x),\ \ \text{where}\ \ c_i(x) \equiv \Cbar(x,\omega_i)\ \ \text{for all}\ \ i \in [N],
 \eequationNN
@@ -51,27 +53,29 @@ the problem that our algorithm is designed to solve is that given by
 \eequation
 Under mild assumptions about $c$ and an assumption that $N$ is sufficiently large, a point that is approximately stationary for problem~\eqref{prob.opt.N} can be shown to the approximately stationary for problem~\eqref{prob.expected}, at least with high probability.  We leave a formal statement and proof of this fact until the end of our analysis.  Until that time, we focus on our proposed algorithm and our analysis of it for solving problem~\eqref{prob.opt.N}.
 
-The main idea of our proposed algorithm for solving problem~\eqref{prob.opt.N} is to generate a sequence of iterates, each of which is a stationary point (at least approximately) with respect to a subsampled problem involving only a subset $\Scal \subseteq [N]$ of constraint function terms.  For any such $\Scal$, an approximation of problem~\eqref{prob.opt.N} is given by
+The main idea of our proposed algorithm for solving problem~\eqref{prob.opt.N} is to generate a sequence of iterates, each of which is a stationary point (at least approximately) with respect to a subsampled problem involving only a subset $\Scal \subseteq [N]$ of constraint function terms.  For any such $\Scal$, we denote the approximate constraint function as $c_\Scal : \R{n} \to \R{m}$ and an approximation of problem~\eqref{prob.opt.N} is given by
 \bequation\label{prob.opt.S}
   \min_{x \in \R{n}}\ f(x)\ \st\ c_\Scal(x) = 0,\ \ \text{where}\ \ c_\Scal(x) = \frac{1}{|\Scal|} \sum_{i\in\Scal} c_i(x).
 \end{equation}
-The primary benefit of considering \eqref{prob.opt.S} for $\Scal \subseteq [N]$, rather than \eqref{prob.opt.N} directly, is that any evaluation of a constraint or constraint Jacobian value requires computing a sum of $|\Scal| \leq N$ terms, as opposed to $N$ terms.  Also, under assumptions about the constraint functions that are reasonable for many real-world problems of interest, we show in this paper that, by starting with an approximate stationary point for problem~\eqref{prob.opt.S} and aiming to solve a subsequent instance of \eqref{prob.opt.S} with respect to a sample set $\overline\Scal \supseteq \Scal$, our proposed algorithm can obtain an approximate stationary point for the subsequent instance with lower sample complexity than if the problem with the larger sample set were solved directly.  Overall, we show that---at least once the sample sets become sufficiently large relative to $N$---a sufficiently approximate stationary point of problem~\eqref{prob.opt.N} can be obtained more efficiently through progressive sampling than by tackling the problem directly.
+(Observe that, in this manner, the constraint function in \eqref{prob.opt.N} is $c_{[N]} = c$.)  The primary benefit of considering \eqref{prob.opt.S} for $\Scal \subseteq [N]$, rather than \eqref{prob.opt.N} directly, is that any evaluation of a constraint or constraint Jacobian value requires computing a sum of $|\Scal| \leq N$ terms, as opposed to $N$ terms.  Also, under reasonable assumptions about the constraint functions, we show in this paper that, by starting with an approximate stationary point for problem~\eqref{prob.opt.S} and aiming to solve a subsequent instance of \eqref{prob.opt.S} with respect to a sample set $\overline\Scal \supseteq \Scal$, our proposed algorithm can obtain an approximate stationary point for the subsequent instance with lower sample complexity than if the problem with the larger sample set were solved directly.  Overall, we show that---at least once the sample sets become sufficiently large relative to $N$---a sufficiently approximate stationary point of problem~\eqref{prob.opt.N} can be obtained more efficiently through progressive sampling than by tackling the problem directly.
 
-For use in our proposed algorithm and our analysis of it, let us introduce stationarity conditions for problem~\eqref{prob.opt.S}, which also represent stationarity conditions for problem~\eqref{prob.opt.N} in the particular case when $\Scal = [N]$.  The Lagrangian of problem~\eqref{prob.opt.S} is $L_\Scal : \R{n} \times \R{m} \to \R{}$ defined for all $(x,y) \in \R{n} \times \R{m}$ by
+For use in our proposed algorithm and our analysis of it, let us introduce stationarity conditions for problem~\eqref{prob.opt.S}, which also represent stationarity conditions for problem~\eqref{prob.opt.N} in the particular case when $\Scal = [N]$.  Let the Lagrangian of problem~\eqref{prob.opt.S} be denoted by $L_\Scal : \R{n} \times \R{m} \to \R{}$, defined for all $(x,y) \in \R{n} \times \R{m}$ by
 \bequationNN
   L_\Scal(x,y) = f(x) + c_\Scal(x)^Ty = f(x) + \frac{1}{|\Scal|} \sum_{i \in \Scal} c_i(x)^Ty,
 \eequationNN
-where $y \in \R{m}$ is referred to as a vector of Lagrange multipliers or dual variables.  Second-order necessary conditions for optimality for \eqref{prob.opt.S} can then be stated as
-\bsubequations\label{eq.soc.S}
-  \begin{align}
-    \nabla_x L_\Scal(x,y) &= 0,\  \nabla_y L_\Scal(x,y) = c_\Scal(x)=0,\label{eq.soc.S.1} \\ \text{and}\ \ 
-    d^T \nabla_{xx}^2 L_\Scal(x,y)d &\geq 0\ \ \text{for all}\ \ d \in \Null(\nabla c_\Scal(x)^T). \label{eq.soc.S.2}
-  \end{align}
-\esubequations
-We refer to any point $(x,y)$ satisfying \eqref{eq.soc.S.1} as a first-order stationary point with respect to problem~\eqref{prob.opt.S}, and we refer to any point satisfying both \eqref{eq.soc.S.1} and \eqref{eq.soc.S.2} (i.e., satisfying \eqref{eq.soc.S}) as a second-order stationary point with respect to problem~\eqref{prob.opt.S}.  In addition, consistent with the literature on worst-case complexity bounds for nonconvex smooth optimization, we say that a point $(x,y)$ is $(\epsilon,\varepsilon)$-stationary with respect to problem~\eqref{prob.opt.S} for some $(\epsilon,\varepsilon) \in \R{}_{>0} \times \R{}_{>0}$ if and only if
+where $y \in \R{m}$ is a vector of Lagrange multipliers (also known as dual variables).  Second-order necessary conditions for optimality for \eqref{prob.opt.S} can then be stated as
+\bequation\label{eq.soc.S.1}
+  \bbmatrix \nabla_x L_\Scal(x,y) \\ \nabla_y L_\Scal(x,y) \ebmatrix \equiv \bbmatrix \nabla f(x) + \nabla c_\Scal(x)y \\ c_\Scal(x) \ebmatrix = 0
+\eequation
+and, with $[c_\Scal]_j$ denoting the $j$th component of the constraint function $c_\Scal$,
+\begin{align}
+  d^T \nabla_{xx}^2 L_\Scal(x,y)d \equiv d^T \( \nabla_{xx}^2 f(x) + \sum_{j \in [m]} \nabla_{xx}^2 [c_\Scal]_j(x) y_j \) d &\geq 0 \label{eq.soc.S.2} \\
+  \text{for all}\ \ d &\in \Null(\nabla c_\Scal(x)^T). \nonumber
+\end{align}
+We refer to any point $(x,y) \in \R{n} \times \R{m}$ satisfying \eqref{eq.soc.S.1} as a first-order stationary point with respect to problem~\eqref{prob.opt.S}, and we refer to any such point satisfying both \eqref{eq.soc.S.1} and \eqref{eq.soc.S.2} as a second-order stationary point with respect to problem~\eqref{prob.opt.S}.  In addition, consistent with the literature on worst-case complexity bounds for nonconvex smooth optimization, we say that a point $(x,y) \in \R{n} \times \R{m}$ is $(\epsilon,\varepsilon)$-stationary with respect to problem~\eqref{prob.opt.S} for some $(\epsilon,\varepsilon) \in \R{}_{>0} \times \R{}_{>0}$ if and only if
 \bsubequations\label{eq.soc.S.approx}
   \begin{align}
-    \|\nabla_x L_\Scal(x,y)\| &\leq \epsilon,\ \|\nabla_y L_\Scal(x,y)\| \leq \epsilon, \label{eq.soc.S.approx.1} \\ \text{and}\ \ 
+    \left\| \bbmatrix \nabla_x L_\Scal(x,y) \\ \nabla_y L_\Scal(x,y) \ebmatrix \right\| &\leq \epsilon \label{eq.soc.S.approx.1} \\ \text{and}\ \ 
     d^T \nabla_{xx}^2 L_\Scal(x,y)d &\geq -\varepsilon\|d\|_2^2\ \ \text{for all}\ \ d \in \Null(\nabla c_\Scal(x)^T). \label{eq.soc.S.approx.2}
   \end{align}
 \esubequations
@@ -91,7 +95,7 @@ Our proposed method is stated as Algorithm~\ref{alg.pcsm} below.
     \State set $\Scal_0 \gets \emptyset$
     \For {$k \in [K]$}
       \State choose $\Scal_k \supseteq \Scal_{k-1}$ such that $|\Scal_k| = p_k$
-      \State using $x_{k-1}$ as a starting point, employ an algorithm to solve \eqref{prob.opt.S}, terminating once a primal iterate $x_k$ has been obtained such that $(x_k,y(x_k))$ (see \eqref{eq.lsm}) is $(\epsilon_k,\varepsilon_k)$-stationary with respect to problem~\eqref{prob.opt.S} for $\Scal = \Scal_k$
+      \State using $x_{k-1}$ as a starting point, employ an algorithm to solve \eqref{prob.opt.S}, terminating once a primal iterate $x_k$ has been obtained such that $(x_k,y_{\Scal_k}(x_k))$ (see \eqref{eq.lsm}) is $(\epsilon_k,\varepsilon_k)$-stationary with respect to problem~\eqref{prob.opt.S} for $\Scal = \Scal_k$
       \State set $p_{k+1} \gets \min\{2p_k, N\}$
     \EndFor
     \State \Return $(x_K,y(x_K))$, which is $(\epsilon_K,\varepsilon_K)$-stationary with respect to \eqref{prob.opt.N}
@@ -103,62 +107,42 @@ Our proposed method is stated as Algorithm~\ref{alg.pcsm} below.
 %*********
 \section{Analysis}\label{sec.analysis}
 
-FEC: Moved assumption from earlier....
-\bassumption\label{ass.nondegeneracy}
-  For all $N\in \Nmbb$, there exists a sample size $p_N\in[N]$, such that for all $(x,\Scal)\subseteq\R{n}\times[N]$ with $|\Scal|\ge p_N$, the Jacobian $\nabla c_{\Scal}(x)^T$ is nondegenerate, i.e. $\rank(\nabla c_{\Scal}(x)^T)=m$.
+We begin our analysis of Algorithm~\ref{alg.pcsm} by stating the assumptions under which we prove our convergence guarantees.  Our first, Assumption~\ref{ass.subproblems} below, ensures that any minimizer of each encountered subproblem is a first-order stationary point and that one can expect an algorithm that is employed to solve each subproblem will find a sufficiently approximate first-order stationary point.  It would be possible to prove reasonable convergence guarantees for Assumption~\ref{ass.subproblems} under looser assumptions.  For example, if an algorithm employed to solve \eqref{prob.opt.S} for some sample set~$\Scal$ were to encounter an (approximate) infeasible stationary point, then it would be reasonable to terminate the subproblem solver and either terminate Algorithm~\ref{alg.pcsm} in its entirety or move on to solve the next subproblem (with a larger sample set).  However, since consideration of such scenarios would distract from the essential properties of our algorithm when each subproblem solve is successful, we make Assumption~\ref{ass.subproblems}.
+
+\bassumption\label{ass.subproblems}
+  The objective function $f : \R{n} \to \R{}$ and each constraint function $c_i : \R{n} \to \R{}$ for each $i \in [N]$ are twice-continuously differentiable.  In addition, there exists $\sigma_{\min} \in \R{}_{>0}$ such that, for all $x \in \R{n}$ and $\Scal \subset [N]$ with $|\Scal| \geq p_1$, the constraint Jacobian has $\sigma_m(\nabla c_\Scal(x)^T) \geq \sigma_{\min}$.  Furthermore, for all $\Scal \subset [N]$ with $|\Scal| \geq p_1$, the algorithm employed to solve subproblem~\eqref{prob.opt.S} is guaranteed to converge to a second-order stationary point, i.e., one satisfying \eqref{eq.soc.S.1} and \eqref{eq.soc.S.2}.
 \eassumption
 
-\bassumption
- \label{ass.boundness}
- There exist constants $(
-  \sigma_{c}^{\max},\sigma_f^{\max}, 
-\sigma_c^{\min},\lambda_c^{\max}
- ,\lambda_f^{\max}
- )\in\Rmbb_{>0}^5$ 
- %with $\sigma_c^{\min}\le\sigma_c^{\max}$, 
-, such that for all $(j,x)\in[m]\times\R{n}$, the following hold
- \begin{itemize}
- 	\item[(1).]
- 	We have $\|\nabla c(x)\|_2\le\sigma_c^{\max}$ and $\|\nabla f(x)\|_2\le\sigma_f^{\max}$. Moreover, the smallest singular value of $\nabla c(x)$,i.e. $\sigma_m(\nabla c (x))$ satisfies $\sigma_m(\nabla c (x))\ge \sigma_c^{\min}$. 
- 	\item[(2).] 
- 	We have $\|\nabla^2 f(x)\|_2\le\lambda_f^{\max}$. In addition, we have $\|\nabla^2 c^j(x)\|_2\le\lambda_c^{\max}$ where the function $c^j$ is the $j$th element of $c$. %In addition, we have $\|\nabla^2 f(x)\|_2\le\lambda_f^{\max}$.
- \end{itemize} 
+The first part of Assumption~\ref{ass.subproblems} guarantees that the algorithm employed to solve subproblem~\eqref{prob.opt.S} will not, for example, get stuck at an infeasible stationary point.  In addition to this assurance, the second part of Assumption~\ref{ass.subproblems} can be guaranteed if, for example, the algorithm employed to solve subproblem~\eqref{prob.opt.S} is driven by reductions in a merit function that is assumed to be bounded below over the generated iterates.
+
+Our next assumption articulates bounds on derivatives of the objective and constraint functions corresponding to the full-sample problem~\eqref{prob.opt.N}.
+
+\bassumption\label{ass.boundness}
+  There exists $(\kappa_{\nabla f}, \kappa_{\nabla c}, \kappa_{\nabla^2 f}, \kappa_{\nabla^2 c}) \in \R{4}_{>0}$ such that, for all $x \in \R{n}$ and $j \in [m]$, one has $\| \nabla f(x) \| \leq \kappa_{\nabla f}$, $\| \nabla c(x) \| \leq \kappa_{\nabla c}$, $\| \nabla^2 f(x) \| \leq \kappa_{\nabla^2 f}$, and $\| \nabla^2 [c]_j (x) \| \leq \kappa_{\nabla^2 c}$ for all $j \in [m]$, where $[c]_j$ denotes the $j$th component of $c$.
 \eassumption
-  In addition to the above assumptions for the average constraint function $c$, we also make the following assumptions regarding individual sample function $c_i$.
-  
-  \bassumption
- \label{ass.bounded.distribute}
- For all $x\in\R{n}$, the Jacobian $\nabla c(x)^T$ has full column rank. In addition, there exist positive constants $(
-\theta_J,\nu_J,\mu_H
- )\in\Rmbb_{>0}^3$, 
- %with $\sigma_c^{\min}\le\sigma_c^{\max}$, 
- such that the following hold
- \begin{itemize}
- 	\item[(1).]
- 	For any $x\in\R{n}$, we have
- 	\bequationNN
- 	\baligned
- 	&\frac{1}{N}\sum_{i=1}^N\left\|\nabla c_i(x)^T\Rcal\left(\nabla c(x)\right) -\nabla c(x)^T\right\|_2^2\le \theta_J\|\nabla c(x)^T\|_2^2\text{, and }\\
- 	&\frac{1}{N}\sum_{i=1}^N\left\|\nabla c_i(x)^T\Ncal\left(\nabla c (x)\right)\right\|_2^2\le \nu_J\|\nabla c (x)^T\|_2^2.
- 	\ealigned
- 	\eequationNN
- 	\item[(2).] 
- 	For all $(j,x)\in[m]\times\R{n}$, 
- 	we have  
- 	\bequationNN
- 	\baligned
- 	&\frac{1}{N}\sum_{i=1}^N\left\|\nabla^2 c^j_i(x)-\nabla^2 c^j(x)\right\|_2^2\le \mu_H \|\nabla^2 c^j(x)\|_2^2.
- 	 	\ealigned
- 	\eequationNN
-  \end{itemize} 
+
+Our next assumption introduces constants that bound discrepancies between constraint Jacobians corresponding to individual samples and those corresponding to the full set of samples, and introduces constants that similarly bound discrepancies between individual-sample and the full-sample constraint Hessian matrices.
+
+\bassumption\label{ass.bounded.distribute}
+  There exists $(\theta_J, \nu_J, \mu_H) \in \R{3}_{>0}$ such that the following hold.
+  \benumerate
+    \item[(a)] For all $x \in \R{n}$, one has
+    \begin{align*}
+      \frac{1}{N} \sum_{i=1}^N \left\| \nabla c_i(x)^T \Rcal\(\nabla c(x)\) - \nabla c(x)^T \right\|^2 &\leq \theta_J \|\nabla c(x)^T\|^2 \\
+      \text{and}\ \ \frac{1}{N} \sum_{i=1}^N \left\| \nabla c_i(x)^T \Ncal \(\nabla c (x) \) \right\|^2 &\leq \nu_J \|\nabla c (x)^T \|^2.
+    \end{align*}
+    \item[(b)] For all $x \in \R{n}$ and $j \in [m]$, one has
+    \begin{align*}
+      \frac{1}{N} \sum_{i=1}^N \left\| \nabla^2 [c_i]_j(x) - \nabla^2 [c]_j(x) \right\|^2 \leq \mu_H \| \nabla^2 [c]_j(x) \|^2.
+    \end{align*}
+  \eenumerate
 \eassumption
-  
-  We make the following two definitions.
-  \begin{definition}
-\label{def.constraint.morse}
-For any $(\alpha,\beta)\in\R{}_{>0}\times\R{}_{>0}$, problem $\{\min_x\ f(x),\st c(x)=0\}$ is $(\alpha,\beta)$-morse, if and only if, for any $x\in\R{n}$ there exists a $y\in\R{m}$, such that
-	when $(x,y)$ satisfies $\|\nabla_x L(x,y)\|_2\le\alpha$, we have $|d^T\nabla^2_{xx}L(x,y)d|\ge\beta\|d\|_2^2$ for all $d\in\Null(\nabla c(x)^T)$.
-\end{definition}
+
+Finally, we make the following assumption.
+
+\bassumption\label{def.constraint.morse}
+  For some $(\alpha,\beta) \in \R{}_{>0} \times \R{}_{>0}$, problem~\eqref{prob.opt.N} is $(\alpha,\beta)$-strongly Morse in the sense that, for any $x \in \R{n}$, if $(x,y(x))$ satisfies $\| \nabla L(x,y(x)) \| \leq \alpha$, then $|d^T \nabla_{xx}^2 L(x,y(x)) d| \geq \beta \|d\|_2^2$ for all $d \in \Null(\nabla c(x)^T)$.
+\eassumption
   
   \begin{definition}
 	\label{def.acute.perturb}
@@ -229,22 +213,11 @@ For any $(\alpha,\beta)\in\R{}_{>0}\times\R{}_{>0}$, problem $\{\min_x\ f(x),\st
   
   For the second item, see {\color{red}cite} for a proof for the bound on $\|\nabla c(x)^\dag\|_2$. 
   
-  For the bound for $\|y_{[N]}(x)\|_2$, by Assumption \ref{ass.boundness}, first item of Lemma \ref{lemma.sample.average.result} and sub-multiplicity for matrix-vector product, we have
+  For the bound for $\|y_{[N]}(x)\|_2$, by Assumption \ref{ass.boundness}, the bound for $\|\nabla c (x)^\dag\|_2$ and sub-multiplicity for matrix-vector product, we have
 	\begin{align*}
 		\|y_{[N]}(x)\|_2&=\|-\nabla c (x)^\dag\nabla f(x)\|_2\le\|\nabla c (x)^\dag\|_2\|\nabla f(x)\|_2\le\frac{\sigma_f^{\max}}{\sigma_c^{\min}}.
 	\end{align*}
-	For the last inequality, first, for any $(j,\Scal)\subseteq[m]\times[N]$ we have 
-  \bequation\label{ineq.hess.S}
-  \baligned
-  \|\nabla ^2c^j_\Scal(x )\|_2
-  &\le \|\nabla ^2c^j(x )\|_2+\|\nabla ^2c^j(x )-\nabla ^2c_\Scal^j(x )\|_2\\
-  &\le  \|\nabla ^2c^j(x )\|_2+\sqrt{\mu_H N\(\frac{N-|\Scal|}{|\Scal|^2}\)} \|\nabla^2 c^j(x)\|_2\\
-  &\le \(1+\sqrt{\mu_H N\(\frac{N-|\Scal|}{|\Scal|^2}\)}\)\lambda_c^{\max}.
-  \ealigned
-  \eequation
-  Here, the first line adds, subtracts a term, and uses the triangle inequality. The second line uses bound on Hessian in this Lemma. The last inequality uses Assumption \ref{ass.boundness}.
-  
-  Second, note that for any vector $y\in\R{m}$, we have $\|y\|_1\le\sqrt{m}\|y\|_2$. Combining this result with Assumption \ref{ass.boundness}, we have
+	For the last inequality, note that for any vector $y\in\R{m}$, we have $\|y\|_1\le\sqrt{m}\|y\|_2$. Combining this result with Assumption \ref{ass.boundness}, we have
   \bequationNN
 \baligned
 \|\nabla^2_{xx}L_{[N]}(x,y_{[N]})\|_2
@@ -319,7 +292,7 @@ First, we examine the difference between $\nabla c_\Scal(x)^T$ and $\nabla c(x)^
 \eequation
 Here, the second line uses $I_n=\Rcal(\nabla c (x))+\Ncal(\nabla c (x))$. The third line rearranges terms. The second to last line uses the Cauchy-Schwaz inequality, and the last line uses Lemma \ref{lemma.sample.average.result}.
 			
-Further, \cite[Theorem 1]{stewart1998perturbation} gives us a bound on the difference of the smallest singular values, i.e. $|\sigma_m(\nabla c_\Scal(x)^T)-\sigma_m(\nabla c(x)^T) |\le \|\nabla c_\Scal(x)-\nabla c (x)^T\|_2$. Combining it with (\ref{ineq.bound.cn.cs}) we have
+Further, \cite[Theorem 1.1]{nakatsukasa2010absolute} gives us a bound on the difference of the smallest singular values, i.e. $|\sigma_m(\nabla c_\Scal(x)^T)-\sigma_m(\nabla c(x)^T) |\le \|\nabla c_\Scal(x)-\nabla c (x)^T\|_2$. Combining it with (\ref{ineq.bound.cn.cs}) we have
 \begin{equation}
 	\label{ineq:perturb weyl}
 	\baligned
@@ -353,7 +326,7 @@ Combining the sub-multiplicity of the matrix product, the first item of Lemma \r
 &\le\frac{1}{\sigma_c^{\min}}  \sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c (x)\|_2\\
 &< \frac{1}{\sigma_c^{\min}}\sigma_c^{\min}=1.
 	\end{align*}
-	Again, by \cite[Theorem 1]{stewart1998perturbation}, we have 
+	Again, by \cite[Theorem 1.1]{nakatsukasa2010absolute}, we have 
 	\[
 	\sigma_m(I_m)-\sigma_m(I_m+(ii))\le \left|\sigma_m(I_m)-\sigma_m(I_m+(ii))\right|\le\|(ii)\|_2<1,
 	\]
