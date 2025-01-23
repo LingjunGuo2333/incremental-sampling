@@ -1,0 +1,88 @@
+%****************
+% Document class
+%****************
+\documentclass[review]{siamart220329}
+
+%**********
+% Requires
+%**********
+\RequirePackage{amsmath}
+\RequirePackage{amsfonts}
+\RequirePackage{amssymb}
+\RequirePackage{hyperref}
+\RequirePackage{multirow}
+\RequirePackage{algorithm}
+\RequirePackage{algpseudocode}
+\RequirePackage{graphicx}
+\RequirePackage{xcolor}
+%\RequirePackage{amsthm}
+\allowdisplaybreaks
+
+%*************
+% Use packages
+%*************
+\usepackage{dpr_fec,ifthen}
+
+%*************
+% New theorems
+%*************
+\newtheorem{assumption}{Assumption}[section]
+\newtheorem{remark}{Remark}[section]
+
+%**********
+% Headings
+%**********
+\title{\input{title}}
+\author{Frank E. Curtis\footnotemark[1]
+   \and Lingjun Guo\footnotemark[1]
+   \and Daniel P.~Robinson\footnotemark[1]}
+\date  {\today}
+
+%**********
+% Document
+%**********
+\begin{document}
+
+% Title
+\maketitle
+
+% Footnotes
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+\footnotetext[1]{Department of Industrial and Systems Engineering, Lehigh University, Bethlehem, PA, USA; E-mail: \email{frank.e.curtis@lehigh.edu}, \email{lig423@lehigh.edu}, \email{daniel.p.robinson@lehigh.edu}}
+\renewcommand{\thefootnote}{\arabic{footnote}}
+
+%**********
+% Abstract
+%**********
+\begin{abstract}
+  \input{abstract}
+\end{abstract}
+
+%**********
+% Keywords
+%**********
+\begin{keywords}
+  nonlinear optimization, nonconvex optimization, Newton's method, worst-case iteration complexity, worst-case evaluation complexity, worst-case sample complexity
+\end{keywords}
+
+%*****
+% AMS
+%*****
+\begin{AMS}
+  49M37, 65K05, 65K10, 65Y20, 68Q25, 90C30, 90C60
+\end{AMS}
+
+%**************
+% Body of paper
+%**************
+\numberwithin{equation}{section}
+\numberwithin{theorem}{section}
+\input{body}
+
+%**************
+% Bibliography
+%**************
+\bibliographystyle{siamplain}
+\bibliography{references}
+
+\end{document}
