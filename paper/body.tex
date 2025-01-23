@@ -41,11 +41,11 @@ Our proposed algorithm is designed to solve a sample average approximation (SAA)
 \bequation\label{prob.expected}
   \min_{x \in \R{n}}\ f(x)\ \st\ \cbar(x) = 0,
 \end{equation}
-where the objective and constraint functions, i.e., $f : \R{n} \to \R{}$ and $\cbar : \R{n} \to \R{m}$, respectively, are twice-continuously differentiable, $m \leq n$, and the constraint function~$c$ is defined by an expectation.  Formally, with respect to a random variable $\omega$ defined by a probability space $(\Omega,\Fcal,\P)$, expectation $\E$ defined by $\P$, and $\Cbar : \R{n} \times \Omega \to \R{m}$, the constraint function $\cbar$ is defined by $\cbar(x) = \E[\Cbar(x,\omega)]$ for all $x \in \R{n}$.
+where the objective and constraint functions, i.e., $f : \R{n} \to \R{}$ and $\cbar : \R{n} \to \R{m}$, respectively, are twice-continuously differentiable, $m \leq n$, and the constraint function~$\cbar$ is defined by an expectation.  Formally, with respect to a random variable $\omega$ defined by a probability space $(\Omega,\Fcal,\P)$, expectation $\E$ defined by $\P$, and $\Cbar : \R{n} \times \Omega \to \R{m}$, the constraint function $\cbar$ is defined by $\cbar(x) = \E[\Cbar(x,\omega)]$ for all $x \in \R{n}$.
 
 The SAA of problem~\eqref{prob.expected} that our algorithm is designed to solve is defined with respect to a sample of $N \in \N{}$ realizations of the random variable $\omega$, say, $\{\omega_i\}_{i\in[N]}$.  Defining the SAA constraint function $c : \R{n} \to \R{m}$ for all $x \in \R{n}$ by
 \bequationNN
-  c(x) = \frac1N \sum_{i=1}^N c_i(x),\ \ \text{where}\ \ c_i(x) \equiv \Cbar(x,\omega_i)\ \ \text{for all}\ \ i \in [N],
+  c(x) = \frac1N \sum_{i \in [N]} c_i(x),\ \ \text{where}\ \ c_i(x) \equiv \Cbar(x,\omega_i)\ \ \text{for all}\ \ i \in [N],
 \eequationNN
 the problem that our algorithm is designed to solve is that given by
 \bequation\label{prob.opt.N}
@@ -53,11 +53,11 @@ the problem that our algorithm is designed to solve is that given by
 \eequation
 Under mild assumptions about $c$ and an assumption that $N$ is sufficiently large, a point that is approximately stationary for problem~\eqref{prob.opt.N} can be shown to the approximately stationary for problem~\eqref{prob.expected}, at least with high probability.  We leave a formal statement and proof of this fact until the end of our analysis.  Until that time, we focus on our proposed algorithm and our analysis of it for solving problem~\eqref{prob.opt.N}.
 
-The main idea of our proposed algorithm for solving problem~\eqref{prob.opt.N} is to generate a sequence of iterates, each of which is a stationary point (at least approximately) with respect to a subsampled problem involving only a subset $\Scal \subseteq [N]$ of constraint function terms.  For any such $\Scal$, we denote the approximate constraint function as $c_\Scal : \R{n} \to \R{m}$ and an approximation of problem~\eqref{prob.opt.N} is given by
+The main idea of our proposed algorithm for solving problem~\eqref{prob.opt.N} is to generate a sequence of iterates, each of which is a stationary point (at least approximately) with respect to a subsampled problem involving only a subset $\Scal \subseteq [N]$ of constraint function terms.  For any such $\Scal$, we denote the approximate constraint function as $c_\Scal : \R{n} \to \R{m}$ and state the approximation of problem~\eqref{prob.opt.N} as
 \bequation\label{prob.opt.S}
   \min_{x \in \R{n}}\ f(x)\ \st\ c_\Scal(x) = 0,\ \ \text{where}\ \ c_\Scal(x) = \frac{1}{|\Scal|} \sum_{i\in\Scal} c_i(x).
 \end{equation}
-(Observe that, in this manner, the constraint function in \eqref{prob.opt.N} is $c_{[N]} = c$.)  The primary benefit of considering \eqref{prob.opt.S} for $\Scal \subseteq [N]$, rather than \eqref{prob.opt.N} directly, is that any evaluation of a constraint or constraint Jacobian value requires computing a sum of $|\Scal| \leq N$ terms, as opposed to $N$ terms.  Also, under reasonable assumptions about the constraint functions, we show in this paper that, by starting with an approximate stationary point for problem~\eqref{prob.opt.S} and aiming to solve a subsequent instance of \eqref{prob.opt.S} with respect to a sample set $\overline\Scal \supseteq \Scal$, our proposed algorithm can obtain an approximate stationary point for the subsequent instance with lower sample complexity than if the problem with the larger sample set were solved directly.  Overall, we show that---at least once the sample sets become sufficiently large relative to $N$---a sufficiently approximate stationary point of problem~\eqref{prob.opt.N} can be obtained more efficiently through progressive sampling than by tackling the problem directly.
+(Observe that, in this manner, the constraint function in \eqref{prob.opt.N} is $c_{[N]} = c$.)  The primary benefit of considering \eqref{prob.opt.S} for $\Scal \subseteq [N]$, rather than \eqref{prob.opt.N} directly, is that any evaluation of a constraint or constraint Jacobian value requires computing a sum of $|\Scal| \leq N$ terms, as opposed to $N$ terms.  Also, under reasonable assumptions about the constraint functions, we show in this paper that, by starting with an approximate stationary point for problem~\eqref{prob.opt.S} and aiming to solve a subsequent instance of~\eqref{prob.opt.S} with respect to a sample set $\overline\Scal \supseteq \Scal$, our proposed algorithm can obtain an approximate stationary point for the subsequent instance with lower sample complexity than if the problem with the larger sample set were solved directly.  Overall, we show that---at least once the sample sets become sufficiently large relative to $N$---a sufficiently approximate stationary point of problem~\eqref{prob.opt.N} can be obtained more efficiently through progressive sampling than by tackling the full-sample problem directly.
 
 For use in our proposed algorithm and our analysis of it, let us introduce stationarity conditions for problem~\eqref{prob.opt.S}, which also represent stationarity conditions for problem~\eqref{prob.opt.N} in the particular case when $\Scal = [N]$.  Let the Lagrangian of problem~\eqref{prob.opt.S} be denoted by $L_\Scal : \R{n} \times \R{m} \to \R{}$, defined for all $(x,y) \in \R{n} \times \R{m}$ by
 \bequationNN
@@ -65,17 +65,17 @@ For use in our proposed algorithm and our analysis of it, let us introduce stati
 \eequationNN
 where $y \in \R{m}$ is a vector of Lagrange multipliers (also known as dual variables).  Second-order necessary conditions for optimality for \eqref{prob.opt.S} can then be stated as
 \bequation\label{eq.soc.S.1}
-  \bbmatrix \nabla_x L_\Scal(x,y) \\ \nabla_y L_\Scal(x,y) \ebmatrix \equiv \bbmatrix \nabla f(x) + \nabla c_\Scal(x)y \\ c_\Scal(x) \ebmatrix = 0
+  \nabla L_\Scal(x,y) \equiv \bbmatrix \nabla_x L_\Scal(x,y) \\ \nabla_y L_\Scal(x,y) \ebmatrix \equiv \bbmatrix \nabla f(x) + \nabla c_\Scal(x)y \\ c_\Scal(x) \ebmatrix = 0
 \eequation
 and, with $[c_\Scal]_j$ denoting the $j$th component of the constraint function $c_\Scal$,
 \begin{align}
-  d^T \nabla_{xx}^2 L_\Scal(x,y)d \equiv d^T \( \nabla_{xx}^2 f(x) + \sum_{j \in [m]} \nabla_{xx}^2 [c_\Scal]_j(x) y_j \) d &\geq 0 \label{eq.soc.S.2} \\
+  d^T \nabla_{xx}^2 L_\Scal(x,y)d \equiv d^T \( \nabla^2 f(x) + \sum_{j \in [m]} \nabla^2 [c_\Scal]_j(x) y_j \) d &\geq 0 \label{eq.soc.S.2} \\
   \text{for all}\ \ d &\in \Null(\nabla c_\Scal(x)^T). \nonumber
 \end{align}
-We refer to any point $(x,y) \in \R{n} \times \R{m}$ satisfying \eqref{eq.soc.S.1} as a first-order stationary point with respect to problem~\eqref{prob.opt.S}, and we refer to any such point satisfying both \eqref{eq.soc.S.1} and \eqref{eq.soc.S.2} as a second-order stationary point with respect to problem~\eqref{prob.opt.S}.  In addition, consistent with the literature on worst-case complexity bounds for nonconvex smooth optimization, we say that a point $(x,y) \in \R{n} \times \R{m}$ is $(\epsilon,\varepsilon)$-stationary with respect to problem~\eqref{prob.opt.S} for some $(\epsilon,\varepsilon) \in \R{}_{>0} \times \R{}_{>0}$ if and only if
+We refer to any point $(x,y) \in \R{n} \times \R{m}$ satisfying \eqref{eq.soc.S.1} as a first-order stationary point (or KKT point) with respect to problem~\eqref{prob.opt.S}, and we refer to any such point satisfying both \eqref{eq.soc.S.1} and \eqref{eq.soc.S.2} as a second-order stationary point with respect to~\eqref{prob.opt.S}.  In addition, consistent with the literature on worst-case complexity bounds for nonconvex smooth optimization, we say that a point $(x,y) \in \R{n} \times \R{m}$ is $(\epsilon,\varepsilon)$-stationary with respect to problem~\eqref{prob.opt.S} for some $(\epsilon,\varepsilon) \in \R{}_{>0} \times \R{}_{>0}$ if and only if
 \bsubequations\label{eq.soc.S.approx}
   \begin{align}
-    \left\| \bbmatrix \nabla_x L_\Scal(x,y) \\ \nabla_y L_\Scal(x,y) \ebmatrix \right\| &\leq \epsilon \label{eq.soc.S.approx.1} \\ \text{and}\ \ 
+    \| \nabla L_\Scal(x,y) \| &\leq \epsilon \label{eq.soc.S.approx.1} \\ \text{and}\ \ 
     d^T \nabla_{xx}^2 L_\Scal(x,y)d &\geq -\varepsilon\|d\|_2^2\ \ \text{for all}\ \ d \in \Null(\nabla c_\Scal(x)^T). \label{eq.soc.S.approx.2}
   \end{align}
 \esubequations
@@ -85,13 +85,13 @@ Generally speaking, an algorithm for solving \eqref{prob.opt.S} can be a \emph{p
   y_\Scal(x) = - (\nabla c_\Scal(x)^T \nabla c_\Scal(x))^{-1} \nabla c_\Scal(x)^T \nabla f(x) = - \nabla c_\Scal(x)^\dag \nabla f(x).
 \end{equation}
 
-Our proposed method is stated as Algorithm~\ref{alg.pcsm} below.
+Our proposed method is stated as Algorithm~\ref{alg.pcsm} below.  In our analysis in the next section, we formalize assumptions under which Algorithm~\ref{alg.pcsm} is well defined and yields our claimed convergence and worst-case sample complexity guarantees.
 
 \balgorithm
   \caption{Progressive Constraint-Sampling Method (PCSM) for \eqref{prob.opt.N}}
   \label{alg.pcsm}
   \balgorithmic[1]
-    \Require Initial sample set size $p_1 \in [N]$, initial point $x_0 \in \R{n}$, maximum outer iteration index $K = \lceil \log_2 \frac{N}{p_1} \rceil$, and subproblem tolerances $\{(\epsilon_k,\varepsilon_k)\}_{k=1}^K \subset \R{}_{>0}$
+    \Require Initial sample size $p_1 \in [N]$, initial point $x_0 \in \R{n}$, maximum iteration index $K = \lceil \log_2 \frac{N}{p_1} \rceil$, and subproblem tolerances $\{(\epsilon_k,\varepsilon_k)\}_{k=1}^K \subset \R{}_{>0} \times \R{}_{>0}$
     \State set $\Scal_0 \gets \emptyset$
     \For {$k \in [K]$}
       \State choose $\Scal_k \supseteq \Scal_{k-1}$ such that $|\Scal_k| = p_k$
@@ -107,36 +107,36 @@ Our proposed method is stated as Algorithm~\ref{alg.pcsm} below.
 %*********
 \section{Analysis}\label{sec.analysis}
 
-We begin our analysis of Algorithm~\ref{alg.pcsm} by stating the assumptions under which we prove our convergence guarantees.  Our first, Assumption~\ref{ass.subproblems} below, ensures that any minimizer of each encountered subproblem is a first-order stationary point and that one can expect an algorithm that is employed to solve each subproblem will find a sufficiently approximate first-order stationary point.  It would be possible to prove reasonable convergence guarantees for Assumption~\ref{ass.subproblems} under looser assumptions.  For example, if an algorithm employed to solve \eqref{prob.opt.S} for some sample set~$\Scal$ were to encounter an (approximate) infeasible stationary point, then it would be reasonable to terminate the subproblem solver and either terminate Algorithm~\ref{alg.pcsm} in its entirety or move on to solve the next subproblem (with a larger sample set).  However, since consideration of such scenarios would distract from the essential properties of our algorithm when each subproblem solve is successful, we make Assumption~\ref{ass.subproblems}.
+We begin our analysis of Algorithm~\ref{alg.pcsm} by stating the assumptions under which we prove our theoretical guarantees.  Our first, Assumption~\ref{ass.subproblems} below, ensures that any minimizer of each encountered subproblem is a first-order stationary point and that one can expect an algorithm that is employed to solve each subproblem will find a sufficiently approximate first-order stationary point.  It would be possible to prove reasonable theoretical guarantees for Assumption~\ref{ass.subproblems} under looser assumptions.  For example, if an algorithm employed to solve \eqref{prob.opt.S} for some sample set~$\Scal$ were to encounter an (approximate) infeasible stationary point, then it would be reasonable to terminate the subproblem solver and either terminate Algorithm~\ref{alg.pcsm} in its entirety or move on to solve the next subproblem (with a larger sample set).  However, since consideration of such scenarios would distract from the essential properties of our algorithm when each subproblem solve is successful, we make Assumption~\ref{ass.subproblems}.
 
 \bassumption\label{ass.subproblems}
   The objective function $f : \R{n} \to \R{}$ and each constraint function $c_i : \R{n} \to \R{}$ for each $i \in [N]$ are twice-continuously differentiable.  In addition, there exists $\sigma_{\min} \in \R{}_{>0}$ such that, for all $x \in \R{n}$ and $\Scal \subset [N]$ with $|\Scal| \geq p_1$, the constraint Jacobian has $\sigma_m(\nabla c_\Scal(x)^T) \geq \sigma_{\min}$.  Furthermore, for all $\Scal \subset [N]$ with $|\Scal| \geq p_1$, the algorithm employed to solve subproblem~\eqref{prob.opt.S} is guaranteed to converge to a second-order stationary point, i.e., one satisfying \eqref{eq.soc.S.1} and \eqref{eq.soc.S.2}.
 \eassumption
 
-The first part of Assumption~\ref{ass.subproblems} guarantees that the algorithm employed to solve subproblem~\eqref{prob.opt.S} will not, for example, get stuck at an infeasible stationary point.  In addition to this assurance, the second part of Assumption~\ref{ass.subproblems} can be guaranteed if, for example, the algorithm employed to solve subproblem~\eqref{prob.opt.S} is driven by reductions in a merit function that is assumed to be bounded below over the generated iterates.
+The first part of Assumption~\ref{ass.subproblems} guarantees that the algorithm employed to solve subproblem~\eqref{prob.opt.S} will not, for example, get stuck at an infeasible stationary point.  In addition to this assurance, the second part of Assumption~\ref{ass.subproblems} implicitly requires one of various types of conditions in the literature on equality-constrained optimization that guarantee convergence of an algorithm to a second-order stationary point. See, for example, \cite{GoyeEfteBoum2024}, where for certain $(\epsilon,\varepsilon) \in \R{}_{>0} \times \R{}_{>0}$ it is shown that an algorithm can produce an $(\epsilon,\varepsilon)$-stationary point in $\Ocal(\max\{\epsilon^{-2}, \varepsilon^{-3}\})$ iterations.
+
+The following comment is important, so we emphasize it as a remark.
+
+\bremark
+  If one were to change the requirement for the subproblem solver in Algorithm~\ref{alg.pcsm} and only require that the solver produce an approximate first-order stationary point, rather than an approximate second-order stationary point, then under Assumption~\ref{ass.subproblems} (with ``second-order'' replaced by ``first-order'') the algorithm would be well defined and, by its construction, would guarantee convergence to an approximate first-order stationary point of \eqref{prob.opt.N}.  Therefore, in practice, Algorithm~\ref{alg.pcsm} might be run with only approximate first-order stationary requirements, as we explore in our experiments in \S\ref{sec.numerical}.  However, such a set-up would not allow us to prove strong sample complexity guarantees.  Therefore, for the purposes of our analysis, we state Algorithm~\ref{alg.pcsm} and Assumption~\ref{ass.subproblems} as they are given, and note that our analysis leverages approximate second-order stationarity in order to ensure good sample complexity.
+\eremark
 
 Our next assumption articulates bounds on derivatives of the objective and constraint functions corresponding to the full-sample problem~\eqref{prob.opt.N}.
 
 \bassumption\label{ass.boundness}
-  There exists $(\kappa_c, \kappa_{\nabla f}, \kappa_{\nabla c}, \kappa_{\nabla^2 f}, \kappa_{\nabla^2 c}) \in \R{5}_{>0}$ such that, for all $x \in \R{n}$ and $j \in [m]$, one has $\|c(x)\|\le\kappa_c$, $\| \nabla f(x) \| \leq \kappa_{\nabla f}$, $\| \nabla c(x) \| \leq \kappa_{\nabla c}$, $\| \nabla^2 f(x) \| \leq \kappa_{\nabla^2 f}$, and $\| \nabla^2 [c]_j (x) \| \leq \kappa_{\nabla^2 c}$ for all $j \in [m]$, where $[c]_j$ denotes the $j$th component of $c$.
+  There exists $(\kappa_{\nabla f}, \kappa_{\nabla c}, \kappa_{\nabla^2 f}, \kappa_{\nabla^2 c}) \in \R{5}_{>0}$ such that, for all $x \in \R{n}$ and $j \in [m]$, one has $\| \nabla f(x) \| \leq \kappa_{\nabla f}$, $\| \nabla c(x) \| \leq \kappa_{\nabla c}$, $\| \nabla^2 f(x) \| \leq \kappa_{\nabla^2 f}$, and $\| \nabla^2 [c]_j (x) \| \leq \kappa_{\nabla^2 c}$ for all $j \in [m]$, where $[c]_j$ denotes the $j$th component of $c$.
 \eassumption
 
 Our next assumption introduces constants that bound discrepancies between constraint Jacobians corresponding to individual samples and those corresponding to the full set of samples, and introduces constants that similarly bound discrepancies between individual-sample and the full-sample constraint Hessian matrices.
 
 \bassumption\label{ass.bounded.distribute}
-  There exists $(\gamma_c,\theta_J, \nu_J, \mu_H) \in \R{3}_{>0}$ such that the following hold.
-  \benumerate
-    \item[(a)] For all $x \in \R{n}$, one has
-    \begin{align*}
-     \frac{1}{N} \sum_{i=1}^N \left\| c_i(x) -  c(x) \right\|^2 &\leq \gamma_c \| c(x) \|^2,\\
-      \frac{1}{N} \sum_{i=1}^N \left\| \nabla c_i(x)^T \Rcal\(\nabla c(x)\) - \nabla c(x)^T \right\|^2 &\leq \theta_J \|\nabla c(x)^T\|^2 \\
-      \text{and}\ \ \frac{1}{N} \sum_{i=1}^N \left\| \nabla c_i(x)^T \Ncal \(\nabla c (x) \) \right\|^2 &\leq \nu_J \|\nabla c (x)^T \|^2.
-    \end{align*}
-    \item[(b)] For all $x \in \R{n}$ and $j \in [m]$, one has
-    \begin{align*}
-      \frac{1}{N} \sum_{i=1}^N \left\| \nabla^2 [c_i]_j(x) - \nabla^2 [c]_j(x) \right\|^2 \leq \mu_H \| \nabla^2 [c]_j(x) \|^2.
-    \end{align*}
-  \eenumerate
+  There exists $(\gamma_c, \gamma_{\nabla c, \Rcal}, \gamma_{\nabla c, \Ncal}, \gamma_{\nabla^2 c}) \in \R{4}_{>0}$ such that, for all $x \in \R{n}$ and $j \in [m]$, one has
+  \begin{align*}
+    \frac{1}{N} \sum_{i \in [N]} \left\| c_i(x) -  c(x) \right\|^2 &\leq \gamma_c, \\
+    \frac{1}{N} \sum_{i \in [N]} \left\| \nabla c_i(x)^T \Rcal\(\nabla c(x)\) - \nabla c(x)^T \right\|^2 &\leq \gamma_{\nabla c, \Rcal} \|\nabla c(x)^T\|^2 \\
+    \frac{1}{N} \sum_{i \in [N]} \left\| \nabla c_i(x)^T \Ncal \(\nabla c (x) \) \right\|^2 &\leq \gamma_{\nabla c, \Ncal} \|\nabla c (x)^T \|^2 \\
+    \frac{1}{N} \sum_{i \in [N]} \left\| \nabla^2 [c_i]_j(x) - \nabla^2 [c]_j(x) \right\|^2 &\leq \gamma_{\nabla^2 c} \| \nabla^2 [c]_j(x) \|^2.
+  \end{align*}
 \eassumption
 
 Finally, we make the following assumption.
@@ -155,16 +155,16 @@ Finally, we make the following assumption.
 
   \blemma
   \label{lemma.sample.average.result}
-  Under Assumption \ref{ass.boundness} where constant $\sigma_c^{\min}$ exist. In addition, under Assumption \ref{ass.bounded.distribute} where constants $(\gamma_c,\theta_J,\nu_J,\mu_H)$ exist. Then, the following hold
+  Under Assumption \ref{ass.boundness} where constant $\sigma_c^{\min}$ exist. In addition, under Assumption \ref{ass.bounded.distribute} where constants $(\gamma_c,\gamma_{\nabla c, \Rcal},\gamma_{\nabla c, \Ncal},\gamma_{\nabla^2 c})$ exist. Then, the following hold
   \bitemize
     \item[(1).] A sample average result holds, that is, for any $(j,x,\Scal)\in[m]\times \R{n}\times[N]$, we have
   \bequation
   \label{eq.sample.average.result}
   \baligned
-   \left\|c_\Scal(x)- c(x)\right\|_2^2&\le N\(\frac{N-|\Scal|}{|\Scal|^2}\)\gamma_c \|c(x)\|_2^2,  \\
-  \left\|\nabla c_\Scal(x)^T\Rcal\left(\nabla c(x)\right) -\nabla c(x)^T\right\|_2^2&\le  N\(\frac{N-|\Scal|}{|\Scal|^2}\)\theta_J\|\nabla c(x)^T\|_2^2,\\
-  \left\|\nabla c_\Scal(x)^T\Ncal\left(\nabla c(x)\right)\right\|_2^2&\le	 N\(\frac{N-|\Scal|}{|\Scal|^2}\)\nu_J\|\nabla c(x)\|_2^2,\\
- \left\|\nabla^2 [c_\Scal]_j(x)-\nabla^2 [c]_j(x)\right\|_2^2&\le N\(\frac{N-|\Scal|}{|\Scal|^2}\)\mu_H \|\nabla^2 [c]_j(x)\|_2^2.   
+   \left\|c_\Scal(x)- c(x)\right\|_2^2&\le N\(\frac{N-|\Scal|}{|\Scal|^2}\)\gamma_c,  \\
+  \left\|\nabla c_\Scal(x)^T\Rcal\left(\nabla c(x)\right) -\nabla c(x)^T\right\|_2^2&\le  N\(\frac{N-|\Scal|}{|\Scal|^2}\)\gamma_{\nabla c, \Rcal}\|\nabla c(x)^T\|_2^2,\\
+  \left\|\nabla c_\Scal(x)^T\Ncal\left(\nabla c(x)\right)\right\|_2^2&\le	 N\(\frac{N-|\Scal|}{|\Scal|^2}\)\gamma_{\nabla c, \Ncal}\|\nabla c(x)\|_2^2,\\
+ \left\|\nabla^2 [c_\Scal]_j(x)-\nabla^2 [c]_j(x)\right\|_2^2&\le N\(\frac{N-|\Scal|}{|\Scal|^2}\)\gamma_{\nabla^2 c} \|\nabla^2 [c]_j(x)\|_2^2.   
  \ealigned
   \eequation
    \item[(2).] The $\nabla c^\dag$, $y_{[N]}$ and $\nabla^2_{xx}L_{[N]}$ are bounded, that is, for any $x\in\R{n}$ we have 
@@ -182,7 +182,7 @@ Finally, we make the following assumption.
   \eitemize
   \elemma
   \bproof
-     For the first item, we only show the second inequality in (\ref{eq.sample.average.result}), and the other two inequalities follow a similar argument. Notice that 
+     For the first item, we only show the second inequality in (\ref{eq.sample.average.result}), and the other three inequalities follow a similar argument. Notice that 
    \bequation
    \label{eq.c_s=c-c_ns}
    \baligned
@@ -208,7 +208,7 @@ Finally, we make the following assumption.
    &\le \frac{1|}{|\Scal|^2}\sum_{i\in[N]\setminus\Scal}\left\|\nabla c(x)^T-\nabla c_i(x)^T\Rcal\left(\nabla c (x)\right)\right\|_2^2\sum_{i\in[N]\setminus\Scal}\|I_n\|_2^2\\
     &= \(\frac{N-|\Scal|}{|\Scal|^2}\)\sum_{i\in[N]\setminus\Scal}\left\|\nabla c (x)^T-\nabla c_i(x)^T\Rcal\left(\nabla c (x)\right)\right\|_2^2\\
     &\le \(\frac{N-|\Scal|}{|\Scal|^2}\)\sum_{i\in[N]}\left\|\nabla c (x)^T-\nabla c_i(x)^T\Rcal\left(\nabla c (x)\right)\right\|_2^2\\
-    &\le \(\frac{N-|\Scal|}{|\Scal|^2}\)N\theta_J\|\nabla c (x)^T\|_2^2.
+    &\le \(\frac{N-|\Scal|}{|\Scal|^2}\)N\gamma_{\nabla c, \Rcal}\|\nabla c (x)^T\|_2^2.
   \ealigned
   \eequationNN
   Here, the first line puts the denominator outside the norm and uses a fact that $\(N-|\Scal|\) \nabla c(x)^T =\sum_{i\in[N]\setminus\Scal} \nabla c(x)^T $. The second line uses the Cauchy-Schwaz inequality. The third line uses that $\|I_n\|_2=1$. The second to last line adds extra $|\Scal|$ nonnegative terms, and the last line uses the first item of Assumption \ref{ass.bounded.distribute}.
@@ -265,13 +265,13 @@ Here, the second line uses the triangle inequality. The third line uses multipli
 %\end{align*}
 %Under Assumption \ref{ass.boundness}, the term $\|\nabla c(x)^T\|_2$ can be bounded. Under Lemma \ref{lemma.sample.average.result}, term $\|\nabla c(x)^T-\nabla c_\Scal(x)^T\|_2$ can be bounded. Hence the above gradient difference only requires extra bounds on $\|y\|_2$ and $\|y-y_\Scal\|_2$, which are shown in Lemma \ref{lemma.bound.y.y_p}. To get there, we will need a few useful results and definitions.
 
-With Definition \ref{def.acute.perturb} and Lemma \ref{lemma.sample.average.result}, we have the following condition on $(\Scal,\theta_J,\nu_J)$ to ensure the Jacobian $\nabla c(x)^T$ and $\nabla c_{\Scal}(x)^T$ are acute perturbations to each other.
+With Definition \ref{def.acute.perturb} and Lemma \ref{lemma.sample.average.result}, we have the following condition on $(\Scal,\gamma_{\nabla c, \Rcal},\gamma_{\nabla c, \Ncal})$ to ensure the Jacobian $\nabla c(x)^T$ and $\nabla c_{\Scal}(x)^T$ are acute perturbations to each other.
 
 \begin{lemma}
 \label{lemma.acute.perturb}
-	Under Assumption \ref{ass.subproblems}, Assumption \ref{ass.boundness} where constants $(\sigma_{\min},\kappa_{\nabla c})$ exist. In addition, under Assumption \ref{ass.bounded.distribute} where constants $(\theta_J,\nu_J)$ exist. Then, if $\Scal\subseteq[N]$ satisfies 
+	Under Assumption \ref{ass.subproblems}, Assumption \ref{ass.boundness} where constants $(\sigma_{\min},\kappa_{\nabla c})$ exist. In addition, under Assumption \ref{ass.bounded.distribute} where constants $(\gamma_{\nabla c, \Rcal},\gamma_{\nabla c, \Ncal})$ exist. Then, if $\Scal\subseteq[N]$ satisfies 
 	\[
-	|\Scal|>\frac{2}{1+\sqrt{1+\frac{2(\sigma_{\min})^2}{(\theta_J+\nu_J)(\kappa_{\nabla c})^2}}}N ,
+	|\Scal|>\frac{2}{1+\sqrt{1+\frac{2(\sigma_{\min})^2}{(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})(\kappa_{\nabla c})^2}}}N ,
 	\]
 	the following hold 
 	\bitemize 
@@ -289,7 +289,7 @@ First, we examine the difference between $\nabla c_\Scal(x)^T$ and $\nabla c(x)^
 	&=\left\|\nabla c_\Scal(x)^T\(\Rcal(\nabla c (x))+ \Ncal(\nabla c (x))\)-\nabla c (x)^T\right\|_2^2\\
 	&=\left\|\nabla c_\Scal(x)^T \Rcal(\nabla c (x))-\nabla c (x)^T+\nabla c_\Scal(x)^T\Ncal(\nabla c (x))) \right\|_2^2\\
 	&\le2\left\|\nabla c_\Scal(x)^T \Rcal(\nabla c (x))-\nabla c (x)^T\right\|_2^2+2\left\|\nabla c_\Scal(x)^T\Ncal(\nabla c (x))) \right\|_2^2\\
-	&\le 2N\(\frac{N-|\Scal|}{|\Scal|^2}\)(\theta_J+\nu_J)\|\nabla c (x)^T\|_2^2.
+	&\le 2N\(\frac{N-|\Scal|}{|\Scal|^2}\)(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})\|\nabla c (x)^T\|_2^2.
 	\ealigned
 \eequation
 Here, the second line uses $I_n=\Rcal(\nabla c (x))+\Ncal(\nabla c (x))$. The third line rearranges terms. The second to last line uses the Cauchy-Schwaz inequality, and the last line uses Lemma \ref{lemma.sample.average.result}.
@@ -299,15 +299,15 @@ Further, \cite[Theorem 1.1]{nakatsukasa2010absolute} gives us a bound on the dif
 	\label{ineq:perturb weyl}
 	\baligned
 	|\sigma_m(\nabla c_\Scal(x)^T)-\sigma_m(\nabla c(x)^T) |
-	&\le \sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c(x)^T\|_2.
+	&\le \sqrt{ \frac{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c(x)^T\|_2.
 	\ealigned
 \end{equation}
-By the choice of $\Scal$, we have $ \sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}<\frac{\sigma_{\min}}{\kappa_{\nabla c}} $, which gives a bound for the smallest singular value of $\nabla c_\Scal(x)^T$,
+By the choice of $\Scal$, we have $ \sqrt{ \frac{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})N(N-|\Scal|)}{|\Scal|^2}}<\frac{\sigma_{\min}}{\kappa_{\nabla c}} $, which gives a bound for the smallest singular value of $\nabla c_\Scal(x)^T$,
 	\begin{align*}
 		\sigma_m(\nabla c_\Scal(x)^T)
 		&=\sigma_m(\nabla c (x)^T)+\sigma_m(\nabla c_\Scal(x)^T)-\sigma_m(\nabla c (x)^T)\\
 		&\ge \sigma_m(\nabla c (x)^T)-\left|\sigma_m(\nabla c_\Scal(x)^T)-\sigma_m(\nabla c (x)^T)\right|\\
-		&\ge \sigma_m(\nabla c (x)^T)- \sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c (x)\|_2\\
+		&\ge \sigma_m(\nabla c (x)^T)- \sqrt{ \frac{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c (x)\|_2\\
 		&> \sigma_{\min}- \sigma_{\min}= 0.
 	\end{align*}
 	Here, the first line adds and subtracts a term. The third line plugs in (\ref{ineq:perturb weyl}). The above result indicates that the smallest singular value of $\nabla c_\Scal(x)^T$ is positive, and we can conclude that $\nabla c_\Scal(x)$ is of full column rank and the dual variable $y(x)$ in (\ref{eq.lsm}) is well defined. 
@@ -325,7 +325,7 @@ Combining the sub-multiplicity of the matrix product, the first item of Lemma \r
 	\begin{align*}
 \|(ii)\|_2&=\left\| \nabla c(x)^\dag\left(\nabla c_\Scal(x)-\nabla c (x)\right)\right\|_2\\
 &\le \left\|\nabla c (x)^\dag\right\|_2\left\|\left(\nabla c_\Scal(x)-\nabla c (x)\right)\right\|_2\\
-&\le\frac{1}{\sigma_{\min}}  \sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c (x)\|_2\\
+&\le\frac{1}{\sigma_{\min}}  \sqrt{ \frac{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c (x)\|_2\\
 &< \frac{1}{\sigma_{\min}}\sigma_{\min}=1.
 	\end{align*}
 	Again, by \cite[Theorem 1.1]{nakatsukasa2010absolute}, we have 
@@ -347,13 +347,13 @@ Combining the sub-multiplicity of the matrix product, the first item of Lemma \r
 Now, we can present the first type of bounds.
 \begin{lemma}
 \label{lemma.bound.y.y_p}
-Under Assumption \ref{ass.subproblems} and Assumption \ref{ass.boundness} where $(\kappa_{\nabla f}, \sigma_{\min},\kappa_{\nabla c})$ exist. In addition, under Assumption \ref{ass.bounded.distribute} where constants $(\theta_J,\nu_J)$ exist. Then, for any $x\in\R{n}$, if the sample set $\Scal\subseteq[N]$ satisfies 
+Under Assumption \ref{ass.subproblems} and Assumption \ref{ass.boundness} where $(\kappa_{\nabla f}, \sigma_{\min},\kappa_{\nabla c})$ exist. In addition, under Assumption \ref{ass.bounded.distribute} where constants $(\gamma_{\nabla c, \Rcal},\gamma_{\nabla c, \Ncal})$ exist. Then, for any $x\in\R{n}$, if the sample set $\Scal\subseteq[N]$ satisfies 
 \[
-|\Scal|\ge\frac{2}{1+\sqrt{1+\frac{2\sigma_{\min}^2}{9(\theta_J+\nu_J)\kappa_{\nabla c}^2}}}N 
+|\Scal|\ge\frac{2}{1+\sqrt{1+\frac{2\sigma_{\min}^2}{9(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})\kappa_{\nabla c}^2}}}N 
 \]
 and let $y_\Scal(x)=-\nabla c_\Scal(x)^\dag\nabla f(x)$, we have
  	\[
- 	\|y_{[N]}(x)-y_\Scal(x)\|_2\le \frac{3\kappa_{\nabla f}\kappa_{\nabla c}}{2\sigma_{\min}^2}\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}.
+ 	\|y_{[N]}(x)-y_\Scal(x)\|_2\le \frac{3\kappa_{\nabla f}\kappa_{\nabla c}}{2\sigma_{\min}^2}\sqrt{ \frac{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})N(N-|\Scal|)}{|\Scal|^2}}.
  	\]
  \end{lemma}
  
@@ -370,7 +370,7 @@ and let $y_\Scal(x)=-\nabla c_\Scal(x)^\dag\nabla f(x)$, we have
 %	\end{align*}
 	
 %Now, we are going to derive the bound for $\|y_{[N]}(x)-y_\Scal(x)\|_2$. 
-By the choice of $\Scal$, we have $\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}\le \frac{\sigma_{\min}}{3\kappa_{\nabla c}}<\frac{\sigma_{\min}}{\kappa_{\nabla c}}$ since $\sigma_{\min}>0$, which satisfies requirements of Lemma \ref{lemma.acute.perturb}. Hence, we have that $\nabla c (x)$ and $\nabla c_\Scal(x)$ are of full column rank and are acute perturbations to each other. By \cite[Theorem 5.2]{396bf6e1-ef54-3bf6-a49b-862db8404076}, we have the following:
+By the choice of $\Scal$, we have $\sqrt{ \frac{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})N(N-|\Scal|)}{|\Scal|^2}}\le \frac{\sigma_{\min}}{3\kappa_{\nabla c}}<\frac{\sigma_{\min}}{\kappa_{\nabla c}}$ since $\sigma_{\min}>0$, which satisfies requirements of Lemma \ref{lemma.acute.perturb}. Hence, we have that $\nabla c (x)$ and $\nabla c_\Scal(x)$ are of full column rank and are acute perturbations to each other. By \cite[Theorem 5.2]{396bf6e1-ef54-3bf6-a49b-862db8404076}, we have the following:
 \bequation
 \label{ineq.define.iii}
 	\|y_{[N]}(x)-y_\Scal(x)\|_2
@@ -379,7 +379,7 @@ By the choice of $\Scal$, we have $\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|
 	By inequality (\ref{ineq.bound.cn.cs}) and the choice of $\Scal$, we have
 	\bequationNN
 	\|\nabla c_\Scal(x)-\nabla c (x)\|_2
-	\le\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c (x)\|_2\le \frac{1}{3}\sigma_{\min},
+	\le\sqrt{ \frac{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})N(N-|\Scal|)}{|\Scal|^2}}\|\nabla c (x)\|_2\le \frac{1}{3}\sigma_{\min},
 \eequationNN
 which further gives us
 	\bequation
@@ -392,13 +392,13 @@ which further gives us
 	\baligned
 	(iii)
 	&\le \frac{3}{2}\|\nabla c(x)^\dag\|_2\|\nabla c(x)-\nabla c_\Scal(x)\|_2\\
-	&\le \frac{3\kappa_{\nabla c}}{ 2\sigma_{\min}}\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}.
+	&\le \frac{3\kappa_{\nabla c}}{ 2\sigma_{\min}}\sqrt{ \frac{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})N(N-|\Scal|)}{|\Scal|^2}}.
 \ealigned
 \eequation
 Here, the first line uses (\ref{ineq.bound.psedueC.C}) at the denominator, and the last line uses the bound for $\|\nabla c(x)^\dag\|_2$. Combining with the bound $\|y_{[N]}(x)\|_2\le\frac{\kappa_{\nabla c}}{\sigma_{\min}}$, we have
 	\[
 	\|y_{[N]}(x)-y_\Scal(x)\|_2
-	 \le \frac{3\kappa_{\nabla f}\kappa_{\nabla c}}{2 \sigma_{\min}^2}\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}.
+	 \le \frac{3\kappa_{\nabla f}\kappa_{\nabla c}}{2 \sigma_{\min}^2}\sqrt{ \frac{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})N(N-|\Scal|)}{|\Scal|^2}}.
 	\]
 	
 %	For the bound of  $\|z_q-y_p\|_2$, using the result just proved, and the fact that $\frac{\log q}{q}\ge\frac{\log p}{p}$ for any $q\ge p>0$, with probability at least $(1-\delta)$, we have
@@ -467,25 +467,25 @@ When we consider the empirical system (\ref{prob.opt.S}), not only did the Lagra
 
 \begin{lemma}
 \label{coro.proj.apply}
-	Under Assumption.\ref{ass.boundness} where constants $(\sigma_{\min},\kappa_{\nabla c})$ exist. In addition, under Assumption \ref{ass.bounded.distribute} where constants $(\theta_J,\nu_J)$ exist. For any $x\in\R{n}$ and any $\Scal\subseteq[N]$ such that
+	Under Assumption.\ref{ass.boundness} where constants $(\sigma_{\min},\kappa_{\nabla c})$ exist. In addition, under Assumption \ref{ass.bounded.distribute} where constants $(\gamma_{\nabla c, \Rcal},\gamma_{\nabla c, \Ncal})$ exist. For any $x\in\R{n}$ and any $\Scal\subseteq[N]$ such that
 		\bequation
 	\label{ineq.Scal.size.large}
-	|\Scal|>\frac{2}{1+\sqrt{1+\frac{2\sigma_{\min}^2}{(\theta_J+\nu_J)\kappa_{\nabla c}^2}}}N.
+	|\Scal|>\frac{2}{1+\sqrt{1+\frac{2\sigma_{\min}^2}{(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})\kappa_{\nabla c}^2}}}N.
 \eequation
 Then, for any $d_\Scal\in \Null(\nabla c_\Scal(x)^T)$, we have
 		\begin{align*}
-	&\frac{\|\Rcal(\nabla c(x))(d_\Scal)\|_2}{\|d_\Scal\|_2}\le  \frac{\kappa_{\nabla c}}{\sigma_{\min}} \sqrt{\frac{2N\(N-|\Scal|\)\(\theta_J+\nu_J\)}{|\Scal|^2}} <1.
+	&\frac{\|\Rcal(\nabla c(x))(d_\Scal)\|_2}{\|d_\Scal\|_2}\le  \frac{\kappa_{\nabla c}}{\sigma_{\min}} \sqrt{\frac{2N\(N-|\Scal|\)\(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal}\)}{|\Scal|^2}} <1.
 	\end{align*}
 %	\begin{itemize}
 %		\item[(1).] 
 %	\text{ and } \\
-%	&\frac{\|\text{Proj}_{\Null(\nabla c(x)^T)}(d_\Scal)\|_2}{\|d_\Scal\|_2}\ge \sqrt{ \left(1- \(\frac{\sigma_c^{\max} }{\sigma_c^{\min}}\)^2 \frac{2N\(N-|\Scal|\)\(\theta_J+\nu_J\)}{|\Scal|^2}\right)}
+%	&\frac{\|\text{Proj}_{\Null(\nabla c(x)^T)}(d_\Scal)\|_2}{\|d_\Scal\|_2}\ge \sqrt{ \left(1- \(\frac{\sigma_c^{\max} }{\sigma_c^{\min}}\)^2 \frac{2N\(N-|\Scal|\)\(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal}\)}{|\Scal|^2}\right)}
 %	\item[(2).] For any set $\Scal'\subseteq[N]$ such that $\Scal'\supseteq\Scal$, and for any $d_{\Scal'}\in \Null(\nabla c_{\Scal'}(x)^T)$, we have
 %		\begin{align*}
 %	&\frac{\|\Rcal(\nabla c_\Scal(x))(d_{\Scal'})\|_2}{\|d_{\Scal'}\|_2}\le 
-%	\frac{11\sigma_c^{\max} }{4\sigma_c^{\min}} \sqrt{\frac{2N\(N-|\Scal|\)\(\theta_J+\nu_J\)}{|\Scal|^2}}
+%	\frac{11\sigma_c^{\max} }{4\sigma_c^{\min}} \sqrt{\frac{2N\(N-|\Scal|\)\(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal}\)}{|\Scal|^2}}
 %	\text{ and } \\
-%	&\frac{\|\text{Proj}_{\Null(\nabla c_\Scal(x)^T)}(d_{\Scal'})\|_2}{\|d_{\Scal'}\|_2}\ge \sqrt{ \left(1- \(\frac{\sigma_c^{\max} }{\sigma_c^{\min}}\)^2 \frac{32N\(N-|\Scal|\)\(\theta_J+\nu_J\)}{|\Scal|^2}\right)}
+%	&\frac{\|\text{Proj}_{\Null(\nabla c_\Scal(x)^T)}(d_{\Scal'})\|_2}{\|d_{\Scal'}\|_2}\ge \sqrt{ \left(1- \(\frac{\sigma_c^{\max} }{\sigma_c^{\min}}\)^2 \frac{32N\(N-|\Scal|\)\(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal}\)}{|\Scal|^2}\right)}
 %	.
 %	\end{align*}
 %	\end{itemize}
@@ -502,12 +502,12 @@ Since $d_\Scal \in \Null(\nabla c_\Scal(x)^T)$ and $\Ncal(\nabla c_\Scal(x))$ is
 	\eequation
 Then, combined with Lemma \ref{lemma.sample.average.result} gives the desired result. Moreover, the choice of $|\Scal|$ (\ref{ineq.Scal.size.large}) gives us
 \[
-\frac{\kappa_{\nabla c}}{\sigma_{\min}} \sqrt{\frac{2N\(N-|\Scal|\)\(\theta_J+\nu_J\)}{|\Scal|^2}} <1.
+\frac{\kappa_{\nabla c}}{\sigma_{\min}} \sqrt{\frac{2N\(N-|\Scal|\)\(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal}\)}{|\Scal|^2}} <1.
 \]
 	 \end{proof}
 %	Note that the choice of $|\Scal|$ ensures
 %	 \[
-%		\frac{\sigma_c^{\max} }{\sigma_c^{\min}} \sqrt{\frac{2N\(N-|\Scal|\)}{|\Scal|^2}\(\theta_J+\nu_J\)}\le\frac{1}{4}<1,
+%		\frac{\sigma_c^{\max} }{\sigma_c^{\min}} \sqrt{\frac{2N\(N-|\Scal|\)}{|\Scal|^2}\(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal}\)}\le\frac{1}{4}<1,
 %	\]
 %	and the second inequality of the first item holds.
 	
@@ -517,7 +517,7 @@ Then, combined with Lemma \ref{lemma.sample.average.result} gives the desired re
 %	\|\(\nabla c_{\Scal}(x)\)^\dag\|_2
 %	&\le \|\nabla c_{\Scal}(x)^\dag-\nabla c(x)^\dag\|_2+\|\nabla c(x)^\dag\|_2\\
 %	&\le (iii)\times\|\nabla c(x)^\dag\|_2+\|\nabla c(x)^\dag\|_2\\
-%	&\le \(\frac{3 \sigma_c^{\max}}{ 2\sigma_c^{\min}}\sqrt{ \frac{2(\theta_J+\nu_J)N(N-|\Scal|)}{|\Scal|^2}}+1\)\|\nabla c(x)^\dag\|_2\\
+%	&\le \(\frac{3 \sigma_c^{\max}}{ 2\sigma_c^{\min}}\sqrt{ \frac{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})N(N-|\Scal|)}{|\Scal|^2}}+1\)\|\nabla c(x)^\dag\|_2\\
 %	&\le \frac{11}{8}\|\nabla c(x)^\dag\|_2\le \frac{11}{8\sigma_c^{\min}}.
 %	\ealigned
 %	\eequationNN
@@ -525,7 +525,7 @@ Then, combined with Lemma \ref{lemma.sample.average.result} gives the desired re
 %	\bequationNN
 %	\baligned
 %	\|\nabla c_{\Scal}(x)-\nabla c_{\Scal'}(x)\|_2&\le \|\nabla c_{\Scal}(x)-\nabla c (x)\|_2+\|\nabla c_{\Scal'}(x)-\nabla c (x)\|_2\\
-%	&\le 2 \sigma_c^{\max} \sqrt{\frac{2N\(N-|\Scal|\)}{|\Scal|^2}\(\theta_J+\nu_J\)}.
+%	&\le 2 \sigma_c^{\max} \sqrt{\frac{2N\(N-|\Scal|\)}{|\Scal|^2}\(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal}\)}.
 %	\ealigned
 %	\eequationNN
 %	Here, the first line uses triangle inequality. The second line comes from the fact that the right-hand side of (\ref{eq.sample.average.result}) decreases when $|\Scal|$ increases.
@@ -630,17 +630,17 @@ In summary, we have the result for the Morse property of the empirical problem. 
 
 \[
 \begin{cases}
-	\eta_0:=\sqrt{ \gamma_c\kappa_c^2} ,\\
-	\eta_1:=\sqrt{\frac{2(\theta_J+\nu_J)\kappa_{\nabla c}^2}{\sigma_{\min}^2} },\\
-	\eta_2:=\tfrac{\kappa_{\nabla f}\kappa_{\nabla^2 c}}{\sigma_{\min}}\sqrt{m\mu_H},\\
-	\eta_3:=\eta_2 +3\eta_1 \lambda_f^{\max}+\frac{9\eta_1\eta_2}{2\sqrt{\mu_H}}.
-%	\eta_2:=\(\eta_1\(3\lambda_f^{\max}+15\sqrt{m}\frac{\sigma_f^{\max}\lambda_c^{\max}}{\sigma_c^{\min}}\)  +\frac{\sqrt{m}\sigma_f^{\max}}{\sigma_c^{\min}} \sqrt{\mu_H}\). 
+	\eta_0:=\sqrt{ \gamma_c} ,\\
+	\eta_1:=\sqrt{\frac{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})\kappa_{\nabla c}^2}{\sigma_{\min}^2} },\\
+	\eta_2:=\tfrac{\kappa_{\nabla f}\kappa_{\nabla^2 c}}{\sigma_{\min}}\sqrt{m\gamma_{\nabla^2 c}},\\
+	\eta_3:=\eta_2 +3\eta_1 \lambda_f^{\max}+\frac{9\eta_1\eta_2}{2\sqrt{\gamma_{\nabla^2 c}}}.
+%	\eta_2:=\(\eta_1\(3\lambda_f^{\max}+15\sqrt{m}\frac{\sigma_f^{\max}\lambda_c^{\max}}{\sigma_c^{\min}}\)  +\frac{\sqrt{m}\sigma_f^{\max}}{\sigma_c^{\min}} \sqrt{\gamma_{\nabla^2 c}}\). 
 \end{cases}
 \]
 
 \begin{theorem}
 \label{thero: emprical morse}
-Under Assumption \ref{ass.subproblems}, Assumption \ref{ass.boundness}, Assumption \ref{ass.bounded.distribute} and Assumption \ref{def.constraint.morse} where the constants $(\sigma_{\min},\kappa_c, \kappa_{\nabla c},\kappa_{\nabla f},\kappa_{\nabla^2 c},\kappa_{\nabla^2 f}, \gamma_c,\theta_J,\nu_J,\mu_H )$ exist, and in addition, the dual variable $y_{[N]}$ and $y_\Scal$ are chosen as in (\ref{eq.lsm}). Then, for any $\Scal\subseteq[N]$ when satisfies:
+Under Assumption \ref{ass.subproblems}, Assumption \ref{ass.boundness}, Assumption \ref{ass.bounded.distribute} and Assumption \ref{def.constraint.morse} where the constants $(\sigma_{\min}, \kappa_{\nabla c},\kappa_{\nabla f},\kappa_{\nabla^2 c},\kappa_{\nabla^2 f}, \gamma_c,\gamma_{\nabla c, \Rcal},\gamma_{\nabla c, \Ncal},\gamma_{\nabla^2 c} )$ exist, and in addition, the dual variable $y_{[N]}$ and $y_\Scal$ are chosen as in (\ref{eq.lsm}). Then, for any $\Scal\subseteq[N]$ when satisfies:
 \bequation
 \label{ineq.theorem1.S}
 g_\Scal:=\sqrt{\frac{N(N-|\Scal|)}{|\Scal|^2}}\le 
@@ -658,7 +658,7 @@ the problem (\ref{prob.opt.S}) is $(\alpha_\Scal,\beta_\Scal)$-morse, where
 
 \begin{proof}
 By inequality (\ref{ineq.bound.cn.cs}) and triangle inequality, we have that for any $x\in\R{n}$\bequationNN
-\|\nabla c_\Scal(x)\|_2\le\|\nabla c(x)\|_2+\|\nabla c_\Scal(x)-\nabla c(x)\|_2  \le \(1+\sqrt{2(\theta_J+\nu_J)}g_\Scal \) \|\nabla c(x)\|_2.
+\|\nabla c_\Scal(x)\|_2\le\|\nabla c(x)\|_2+\|\nabla c_\Scal(x)-\nabla c(x)\|_2  \le \(1+\sqrt{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})}g_\Scal \) \|\nabla c(x)\|_2.
 	\eequationNN
 
 Next, we look into the difference between $\nabla_xL_{[N]}(x,y_{[N]})$ and $\nabla_x L_\Scal(x,y_\Scal)$. We have
@@ -678,7 +678,7 @@ Here, the third line uses the definition for $y_{[N]}$ and $y_\Scal$. The second
 \baligned
 	& \|-\Rcal\(\nabla c_\Scal(x)\)+\Rcal\(\nabla c(x)\)\|_2\kappa_{\nabla f} \\
 	&= \|-\Rcal\(\nabla c_\Scal(x)\)\(I_n-\Rcal\(\nabla c(x)\)\)\|_2\kappa_{\nabla f}\\
-	&=\|\Rcal\(\nabla c_\Scal(x)\)\Ncal\(\nabla c(x)\)\|_2\kappa_{\nabla f}\le \frac{\kappa_{\nabla c} \kappa_{\nabla f}}{\sigma_{\min}}\sqrt{2(\theta_J+\nu_J)} g_\Scal.
+	&=\|\Rcal\(\nabla c_\Scal(x)\)\Ncal\(\nabla c(x)\)\|_2\kappa_{\nabla f}\le \frac{\kappa_{\nabla c} \kappa_{\nabla f}}{\sigma_{\min}}\sqrt{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})} g_\Scal.
 \ealigned
 \eequation
 For the difference between $\nabla_yL_{[N]}(x,y_{[N]})$ and $\nabla_y L_\Scal(x,y_\Scal)$, we have
@@ -686,7 +686,7 @@ For the difference between $\nabla_yL_{[N]}(x,y_{[N]})$ and $\nabla_y L_\Scal(x,
 \label{ineq.L.grad,y.diff}
 \baligned
 	&\left\|\nabla_yL_{[N]}(x,y_{[N]})-\nabla_yL_{\Scal}(x,y_{\Scal})\right\|_2 =\| c(x) -  c_\Scal(x) \|_2\\
-	& \le \sqrt{\gamma_cN\(\frac{N-|\Scal|}{|\Scal|^2}\)} \|c(x)\|_2 \le \sqrt{\gamma_c} \kappa_cg_\Scal.
+	& \le \sqrt{\gamma_cN\(\frac{N-|\Scal|}{|\Scal|^2}\)}= \sqrt{\gamma_c} g_\Scal.
 \ealigned
 \eequation
 Combining (\ref{ineq.L.grad.x.diff}, \ref{ineq.L.grad,y.diff}) and note that 
@@ -697,11 +697,11 @@ Combining (\ref{ineq.L.grad.x.diff}, \ref{ineq.L.grad,y.diff}) and note that
 \begin{align*}
 \nabla L_{[N]}(x,y_{[N]})
 &\le\|\nabla L_\Scal(x,y_\Scal)\|_2+\left\|\nabla L_{[N]}(x,y_{[N]})-\nabla L_{\Scal}(x,y_{\Scal})\right\|_2\\
-&\le \|\nabla L_\Scal(x,y_\Scal)\|_2+ \sqrt{\frac{2(\theta_J+\nu_J)\kappa_{\nabla c}^2\kappa_{\nabla f}^2}{\sigma_{\min}^2}+\gamma_c\kappa_c^2}g_\Scal\\
+&\le \|\nabla L_\Scal(x,y_\Scal)\|_2+ \sqrt{\frac{2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})\kappa_{\nabla c}^2\kappa_{\nabla f}^2}{\sigma_{\min}^2}+\gamma_c}g_\Scal\\
 &=\|\nabla L_\Scal(x,y_\Scal)\|_2+ \sqrt{\eta_0^2+\kappa_{\nabla f}^2\eta_1^2}g_\Scal.
 \end{align*}
 
-Hence for any $x\in\R{n}$ satisfies $\|\nabla_x L_\Scal(x,y_\Scal)\|_2\le \alpha-  \sqrt{\eta_0^2+\kappa_{\nabla f}^2\eta_1^2}g_\Scal=\alpha_\Scal$, we have $\|\nabla_x L_{[N]}(x,y_{[N]})\|_2\le  \alpha$.
+Hence for any $x\in\R{n}$ satisfies $\|\nabla L_\Scal(x,y_\Scal)\|_2\le \alpha-  \sqrt{\eta_0^2+\kappa_{\nabla f}^2\eta_1^2}g_\Scal=\alpha_\Scal$, we have $\|\nabla L_{[N]}(x,y_{[N]})\|_2\le  \alpha$.
 In addition, the choice of $\Scal$ gives $\sqrt{\eta_0^2+\kappa_{\nabla f}^2\eta_1^2}g_\Scal\le\half\alpha$, we have
 \[
  \alpha_\Scal\ge\half\alpha>0.
@@ -734,8 +734,8 @@ Here, the first equality and inequality follow by adding, subtracting a term, an
 \baligned
 (v.1)
 &\ge \beta\|\dtilde_\Scal\|_2^2- 3\(\kappa_{\nabla^2 f}+\frac{\sqrt{m}\kappa_{\nabla f}\kappa_{\nabla^2 c}}{\sigma_{\min}} g_{\Scal_k})\)\|d_\Scal\|_2\|r_\Scal\|_2\\
-&\ge \beta(1-\eta_1g_\Scal)\|d_\Scal\|_2^2-3 \(\kappa_{\nabla^2 f}+\frac{\eta_2}{\sqrt{\mu_H}}g_{\Scal}\)\eta_1g_\Scal\|d_\Scal\|_2^2\\
-&=\( \beta-\(\eta_1\beta+3\eta_1 \kappa_{\nabla^2 f}+3\frac{\eta_1\eta_2}{\sqrt{\mu_H}}\)g_\Scal\)\|d_\Scal\|_2^2.
+&\ge \beta(1-\eta_1g_\Scal)\|d_\Scal\|_2^2-3 \(\kappa_{\nabla^2 f}+\frac{\eta_2}{\sqrt{\gamma_{\nabla^2 c}}}g_{\Scal}\)\eta_1g_\Scal\|d_\Scal\|_2^2\\
+&=\( \beta-\(\eta_1\beta+3\eta_1 \kappa_{\nabla^2 f}+3\frac{\eta_1\eta_2}{\sqrt{\gamma_{\nabla^2 c}}}\)g_\Scal\)\|d_\Scal\|_2^2.
 \ealigned
 \eequationNN
 Here, the first line uses Lemma \ref{lemma.sample.average.result}, the second line uses Lemma \ref{coro.proj.apply}, and the last line rearranges terms.
@@ -754,10 +754,10 @@ where for the term of Hessian, we have
 	&\left\|\sum_{j=1}^m(y^j_\Scal\nabla^2[c_\Scal]_j(x)-y_{[N]}^j\nabla^2[c]_j(x))\right\|_2\\
 	&=\left\|\sum_{j=1}^m\left(y^j_\Scal\left(\nabla^2[c_\Scal]_j(x)-\nabla^2[c]_j(x)\right)\right)+\sum_{j=1}^m\left(\left(y_\Scal^j-y_{[N]}^j\right)\nabla^2[c]_j(x)\right)\right\|_2\\
 	&\le \sum_{j=1}^m\left\|y_\Scal^j\right\|_2\left\|\nabla^2[c_\Scal]_j(x)-\nabla^2[c]_j(x)\right\|_{2}+\sum_{j=1}^m\left\|y_\Scal^j-y_{[N]}^j\right\|_2\left\|\nabla^2[c]_j(x)\right\|_2\\
-	&\le\sqrt{m\mu_H}\kappa_{\nabla^2 c} g_\Scal\left\|y_\Scal\right\|_2+\sqrt{m}\kappa_{\nabla^2 c}\left\|y_\Scal-y_{[N]}\right\|_2\\
-	&\le\sqrt{m\mu_H}\kappa_{\nabla^2 c}g_\Scal\left\|y_{[N]}\right\|_2 +(1+\sqrt{\mu_H}g_\Scal)\sqrt{m}\kappa_{\nabla^2 c}\left\|y_\Scal-y_{[N]}\right\|_2\\
-	&\le\sqrt{m\mu_H}\frac{\kappa_{\nabla^2 c}\kappa_{\nabla f}}{\sigma_{\min}} g_\Scal+(1+\sqrt{\mu_H}g_\Scal)\sqrt{m}\frac{3\kappa_{\nabla f}\kappa_{\nabla^2 c}\kappa_{\nabla c}}{2(\sigma_{\min})^2}\sqrt{ 2(\theta_J+\nu_J)}g_\Scal\\
-	&=\eta_2g_\Scal+\frac{3\eta_1\eta_2}{2\sqrt{\mu_H}}g_\Scal+\frac{3\eta_1\eta_2}{2}g_\Scal^2.
+	&\le\sqrt{m\gamma_{\nabla^2 c}}\kappa_{\nabla^2 c} g_\Scal\left\|y_\Scal\right\|_2+\sqrt{m}\kappa_{\nabla^2 c}\left\|y_\Scal-y_{[N]}\right\|_2\\
+	&\le\sqrt{m\gamma_{\nabla^2 c}}\kappa_{\nabla^2 c}g_\Scal\left\|y_{[N]}\right\|_2 +(1+\sqrt{\gamma_{\nabla^2 c}}g_\Scal)\sqrt{m}\kappa_{\nabla^2 c}\left\|y_\Scal-y_{[N]}\right\|_2\\
+	&\le\sqrt{m\gamma_{\nabla^2 c}}\frac{\kappa_{\nabla^2 c}\kappa_{\nabla f}}{\sigma_{\min}} g_\Scal+(1+\sqrt{\gamma_{\nabla^2 c}}g_\Scal)\sqrt{m}\frac{3\kappa_{\nabla f}\kappa_{\nabla^2 c}\kappa_{\nabla c}}{2(\sigma_{\min})^2}\sqrt{ 2(\gamma_{\nabla c, \Rcal}+\gamma_{\nabla c, \Ncal})}g_\Scal\\
+	&=\eta_2g_\Scal+\frac{3\eta_1\eta_2}{2\sqrt{\gamma_{\nabla^2 c}}}g_\Scal+\frac{3\eta_1\eta_2}{2}g_\Scal^2.
 	\end{align*}
 Here, the second is to add, subtract, and rearrange terms. The third line uses triangle inequality and submultiplicity. The fourth line uses similar arguments as in $(v.1)$. The fifth line uses the fact that $\|y_\Scal\|_2\le\|y_{[N]}\|_2+\|y_\Scal-y_{[N]}\|_2$ and rearranges terms. The last two lines use Lemma \ref{lemma.bound.y.y_p} since $g_\Scal\le\frac{1}{3\eta_1}$, and the definition of $(\eta_1,\eta_2)$.  
 
@@ -765,7 +765,7 @@ Combining the above results for $(v.1,v.2)$, we have
 \bequationNN
 \baligned
 &\left|d_\Scal^T\nabla^2_{xx}L_\Scal(x,y_\Scal)d_\Scal\right|\\
-&\ge \( \beta-\(\eta_1\beta+\eta_2 +3\eta_1\kappa_{\nabla^2 c}+\frac{9\eta_1\eta_2}{2\sqrt{\mu_H}}\)g_\Scal-\frac{3}{2} \eta_1\eta_2 g_\Scal^2\)\|d_\Scal\|_2^2\\
+&\ge \( \beta-\(\eta_1\beta+\eta_2 +3\eta_1\kappa_{\nabla^2 c}+\frac{9\eta_1\eta_2}{2\sqrt{\gamma_{\nabla^2 c}}}\)g_\Scal-\frac{3}{2} \eta_1\eta_2 g_\Scal^2\)\|d_\Scal\|_2^2\\
 &= \( \beta-\(\eta_1\beta+\eta_3\)g_\Scal-\frac{3}{2} \eta_1\eta_2g_\Scal^2\)\|d_\Scal\|_2^2.
 \ealigned
 \eequationNN
@@ -791,7 +791,7 @@ Hence the last requirement for $\Scal$ ensures that.
 %
 %By Assumption \ref{ass.boundness} and Lemma \ref{lemma.sample.average.result} we have
 %\[
-%\max_i\left\{\left\|(\nabla^2c_\Scal^i(x)-\nabla^2c^i(x))\right\|_{2}\right\}\le \sqrt{\mu_H}g_\Scal\text{ and }\max_i\left\{\left\|\nabla^2c^i(x)\right\|_2\right\}\le\lambda_c^{\max}.
+%\max_i\left\{\left\|(\nabla^2c_\Scal^i(x)-\nabla^2c^i(x))\right\|_{2}\right\}\le \sqrt{\gamma_{\nabla^2 c}}g_\Scal\text{ and }\max_i\left\{\left\|\nabla^2c^i(x)\right\|_2\right\}\le\lambda_c^{\max}.
 %\]
 %In addition, it is easy to see that $r_\Scal=\Rcal(\nabla c(x))d_\Scal$ and $r_\Scal^T\dtilde_\Scal=0$. Plugging the above bounds into Lemma \ref{lemma.bound.hess.cond} gives 
 %\begin{equation}
@@ -799,8 +799,8 @@ Hence the last requirement for $\Scal$ ensures that.
 %\begin{aligned}
 %	(v)
 %	&\le\underbrace{3\|\nabla^2f(x)\|_2 \|d_\Scal\|_2\|r_\Scal\|_2}_{(v.1)}\\
-%	&\hspace{2em}+\underbrace{\sqrt{m}\left(\|y_{[N]}\|_2\sqrt{\mu_H}g_\Scal+\|y_\Scal-y_{[N]}\|_2(\lambda_c^{\max}+\sqrt{\mu_H}g_\Scal)\right)\|d_\Scal\|_2^2}_{(v.2)}\\
-%	&\hspace{2em}+\underbrace{3\sqrt{m}\left(\lambda_c^{\max}+\sqrt{\mu_H}g_\Scal\right)\left(\|y_{[N]}\|_2+ \|y_{[N]}-y_\Scal\|_2\right)\|d_\Scal\|_2\|r_\Scal\|_2}_{(v.3)}.
+%	&\hspace{2em}+\underbrace{\sqrt{m}\left(\|y_{[N]}\|_2\sqrt{\gamma_{\nabla^2 c}}g_\Scal+\|y_\Scal-y_{[N]}\|_2(\lambda_c^{\max}+\sqrt{\gamma_{\nabla^2 c}}g_\Scal)\right)\|d_\Scal\|_2^2}_{(v.2)}\\
+%	&\hspace{2em}+\underbrace{3\sqrt{m}\left(\lambda_c^{\max}+\sqrt{\gamma_{\nabla^2 c}}g_\Scal\right)\left(\|y_{[N]}\|_2+ \|y_{[N]}-y_\Scal\|_2\right)\|d_\Scal\|_2\|r_\Scal\|_2}_{(v.3)}.
 %\end{aligned}
 %\end{equation}
 %Now, we are going to bound the right-hand side of (\ref{ineq: (i)}) term by term.
@@ -809,22 +809,22 @@ Hence the last requirement for $\Scal$ ensures that.
 %\begin{align*}
 %(v.1)&\le3\lambda_f^{\max}\eta_1g_\Scal\|d_\Scal\|_2^2.
 %\end{align*}
-%For $(v.2)$, note that by the second requirement for $\Scal$ we have $\sqrt{\mu_H}g_\Scal\le\lambda_c^{\max}$, which further gives $(\lambda_c^{\max}+\sqrt{\mu_H}g_\Scal)\le2\lambda_c^{\max}$. We have
+%For $(v.2)$, note that by the second requirement for $\Scal$ we have $\sqrt{\gamma_{\nabla^2 c}}g_\Scal\le\lambda_c^{\max}$, which further gives $(\lambda_c^{\max}+\sqrt{\gamma_{\nabla^2 c}}g_\Scal)\le2\lambda_c^{\max}$. We have
 %\bequationNN
 %\baligned
 %(v.2)
-%&\le \sqrt{m} \frac{\sigma_f^{\max}}{\sigma_c^{\min}}\sqrt{\mu_H}g_\Scal\|d_\Scal\|_2^2+ \frac{3\sqrt{m}\sigma_f^{\max}\lambda_c^{\max} }{\sigma_c^{\min}}\eta_1g_\Scal\|d_\Scal\|_2^2\\
-%&=\frac{\sqrt{m}\sigma_f^{\max}}{\sigma_c^{\min}} \(\sqrt{\mu_H}+  3 \lambda_c^{\max} \eta_1\)g_\Scal\|d_\Scal\|_2^2.
+%&\le \sqrt{m} \frac{\sigma_f^{\max}}{\sigma_c^{\min}}\sqrt{\gamma_{\nabla^2 c}}g_\Scal\|d_\Scal\|_2^2+ \frac{3\sqrt{m}\sigma_f^{\max}\lambda_c^{\max} }{\sigma_c^{\min}}\eta_1g_\Scal\|d_\Scal\|_2^2\\
+%&=\frac{\sqrt{m}\sigma_f^{\max}}{\sigma_c^{\min}} \(\sqrt{\gamma_{\nabla^2 c}}+  3 \lambda_c^{\max} \eta_1\)g_\Scal\|d_\Scal\|_2^2.
 %\ealigned
 %\eequationNN
-%For the term $(v.3)$, by the third requirement for $\Scal$, we have $\|y_{[N]}-y_\Scal\|_2\le\frac{\sigma_f^{\max}}{\sigma_c^{\min}} $. Combining with $\sqrt{\mu_H}g_\Scal\le\lambda_c^{\max}$ and Corollary \ref{coro.proj.apply}, we have
+%For the term $(v.3)$, by the third requirement for $\Scal$, we have $\|y_{[N]}-y_\Scal\|_2\le\frac{\sigma_f^{\max}}{\sigma_c^{\min}} $. Combining with $\sqrt{\gamma_{\nabla^2 c}}g_\Scal\le\lambda_c^{\max}$ and Corollary \ref{coro.proj.apply}, we have
 %\begin{align*}
 %	(v.3)
 %	&\le\frac{12\sqrt{m} \lambda_c^{\max} \sigma_f^{\max}}{\sigma_c^{\min}}\eta_1g_\Scal \|d_\Scal\|_2^2.
 %\end{align*}
 %Combining $(v.1),(v.2)$ and $(v.3)$, we have a bound for $(v)$, that is,
 %\begin{align*}
-%	(v)&\le \underbrace{\(\eta_1\(3\lambda_f^{\max}+15\sqrt{m}\frac{\sigma_f^{\max}\lambda_c^{\max}}{\sigma_c^{\min}}\)  +\frac{\sqrt{m}\sigma_f^{\max}}{\sigma_c^{\min}} \sqrt{\mu_H}\)}_{\eta_2}  g_\Scal \|d_\Scal\|_2^2.
+%	(v)&\le \underbrace{\(\eta_1\(3\lambda_f^{\max}+15\sqrt{m}\frac{\sigma_f^{\max}\lambda_c^{\max}}{\sigma_c^{\min}}\)  +\frac{\sqrt{m}\sigma_f^{\max}}{\sigma_c^{\min}} \sqrt{\gamma_{\nabla^2 c}}\)}_{\eta_2}  g_\Scal \|d_\Scal\|_2^2.
 %\end{align*}
 %Recall that $\|\dtilde_\Scal\|_2^2=\|d\|_2^2-\|r_\Scal\|_2^2$, and by Corollary \ref{coro.proj.apply}, we have
 %\begin{align*}
@@ -843,7 +843,7 @@ Hence the last requirement for $\Scal$ ensures that.
 %\end{align*}
 
 \begin{theorem}
-Under Assumptino \ref{ass.subproblems}, Assumption \ref{ass.boundness}  Assumption \ref{ass.bounded.distribute} and Assumption \ref{def.constraint.morse} where the constants $(\sigma_{\min},\kappa_{ c},\kappa_{\nabla c},\kappa_{\nabla f},\kappa_{\nabla^2 c},\kappa_{\nabla^2 f},\gamma_c,\theta_J,\nu_J,\mu_H )$ exist.  Define tolerances 
+Under Assumptino \ref{ass.subproblems}, Assumption \ref{ass.boundness}  Assumption \ref{ass.bounded.distribute} and Assumption \ref{def.constraint.morse} where the constants $(\sigma_{\min}, \kappa_{\nabla c},\kappa_{\nabla f},\kappa_{\nabla^2 c},\kappa_{\nabla^2 f},\gamma_c,\gamma_{\nabla c, \Rcal},\gamma_{\nabla c, \Ncal},\gamma_{\nabla^2 c} )$ exist.  Define tolerances 
 \[
 \epsilon_k:=\sqrt{\eta_0^2+\kappa_{\nabla f}^2\eta_1^2}\sqrt{\frac{N(N-|\Scal_k|)}{|\Scal_k|^2}}\text{ and }\varepsilon_k:= \kappa_{\nabla^2f}\eta_1\sqrt{\frac{N(N-|\Scal_k|)}{|\Scal_k|^2}},\ \forall\ k\in[K].
 \]
@@ -855,7 +855,7 @@ Let (\ref{prob.opt.N}) proceed with Algorithm \ref{alg.pcsm}. Then, for all samp
 \eequation
 if $x_{\Scal_k}\in\R{n}$ is a $(\epsilon_k,\varepsilon_k)$ stationary solution, the $x_{\Scal_k}$ must satisfy the following for problem (\ref{prob.opt.S}) with $\Scal=\Scal_{k+1}$
 \begin{align*}
-	&\|\nabla_xL_{\Scal_{k+1}}(x_{\Scal_{k}},y_{\Scal_{k+1}}(x_{\Scal_k}))\|_2 \le\alpha_{\Scal_{k+1}}\text{, and }\\
+	&\|\nabla L_{\Scal_{k+1}}(x_{\Scal_{k}},y_{\Scal_{k+1}}(x_{\Scal_k}))\|_2 \le\alpha_{\Scal_{k+1}}\text{, and }\\
 	& d^T\nabla^2_{xx}L_{\Scal_{k+1}}(x_{\Scal_{k}},y_{\Scal_{k+1}}(x_{\Scal_k}))d\ge \beta_{\Scal_{k+1}}\|d\|_2^2,\forall \ d\in\Null(\nabla c_{\Scal_{k+1}}(x_{\Scal_k})^T).
 \end{align*}
 \end{theorem}
@@ -900,7 +900,7 @@ Here, the first inequality uses the triangle inequality. The second inequality c
 and combining with the fact that $\alpha_{\Scal}$ decreases when $|\Scal|$ increases, we have
 \bequation
 \label{ineq.S.k+1.grad.cond}
-\|\nabla_xL_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})\|_2\le\alpha_{\Scal_k}\le\alpha_{\Scal_{k+1}}.
+\|\nabla L_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})\|_2\le\alpha_{\Scal_k}\le\alpha_{\Scal_{k+1}}.
 \eequation
 
 Now, we turn to the condition for hessian. Since the subproblem for $\Scal_{k+1}$ is $(\alpha_{\Scal_{k+1}},\beta_{\Scal_{k+1}})$-morse and with (\ref{ineq.S.k+1.grad.cond}), we have
@@ -933,11 +933,11 @@ Thanks to the previous result in Theorem \ref{thero: emprical morse} on the term
 \bequation
 \label{ineq.bound vi}
 \baligned
-&(vi.1)\le\(\eta_2g_{\Scal_{k+1}}+\frac{3\eta_1\eta_2}{2\sqrt{\mu_H}}g_{\Scal_{k+1}}+\frac{3\eta_1\eta_2}{2}g_{\Scal_{k+1}}^2\)\|d_{\Scal_{k+1}}\|_2^2\text{, and }\\
-&(vi.3)\le\(\eta_2g_{\Scal_{k}}+\frac{3\eta_1\eta_2}{2\sqrt{\mu_H}}g_{\Scal_{k}}+\frac{3\eta_1\eta_2}{2}g_{\Scal_{k}}^2\)\|\dbar_{\Scal_{k+1}}\|_2^2.
+&(vi.1)\le\(\eta_2g_{\Scal_{k+1}}+\frac{3\eta_1\eta_2}{2\sqrt{\gamma_{\nabla^2 c}}}g_{\Scal_{k+1}}+\frac{3\eta_1\eta_2}{2}g_{\Scal_{k+1}}^2\)\|d_{\Scal_{k+1}}\|_2^2\text{, and }\\
+&(vi.3)\le\(\eta_2g_{\Scal_{k}}+\frac{3\eta_1\eta_2}{2\sqrt{\gamma_{\nabla^2 c}}}g_{\Scal_{k}}+\frac{3\eta_1\eta_2}{2}g_{\Scal_{k}}^2\)\|\dbar_{\Scal_{k+1}}\|_2^2.
 \ealigned
 \eequation
-For $(vi.2)$, by Lemma \ref{lemma.sample.average.result} we have $\|\nabla^2_{xx}L_{[N]}(x_{\Scal_{k}},z_{[N]})\|_2 \le \kappa_{\nabla^2f}+\frac{\eta_2}{\sqrt{\mu_H}}$,
+For $(vi.2)$, by Lemma \ref{lemma.sample.average.result} we have $\|\nabla^2_{xx}L_{[N]}(x_{\Scal_{k}},z_{[N]})\|_2 \le \kappa_{\nabla^2f}+\frac{\eta_2}{\sqrt{\gamma_{\nabla^2 c}}}$,
 and that
 \bequationNN
 \baligned
@@ -954,9 +954,9 @@ Combining all the above results, noticing that $g_\Scal$ is nondecreasing with r
 \bequationNN
 \baligned
 &d_{\Scal_{k+1}}^T\nabla^2_{xx}L_{\Scal_{k+1}}(x_{\Scal_{k}},z_{\Scal_{k+1}})d_{\Scal_{k+1}}\\
-	&\ge -\eta_1\kappa_{\nabla^2f}g_{\Scal_k} \left\|d_{\Scal_{k+1}}\right\|_2^2- 2\(\eta_2+\frac{3\eta_1\eta_2}{2\sqrt{\mu_H}} +\frac{3\eta_1\eta_2}{2} g_{\Scal_{k}}\)g_{\Scal_{k}}\|d_{\Scal_{k+1}}\|_2^2\\
-	&\hspace{2em}-\(\kappa_{\nabla^2f}+\frac{\eta_2}{\sqrt{\mu_H}}\)2\eta_1 g_{\Scal_{k}}\|d_{\Scal_{k+1}}\|_2^2\\
-	&= -\(\(3\eta_1 \kappa_{\nabla^2f}+2\eta_2+\frac{5\eta_1\eta_2}{\sqrt{\mu_H}} \)g_{\Scal_k} +3\eta_1\eta_2g_{\Scal_k} ^2  \) \left\|d_{\Scal_{k+1}}\right\|_2^2\\
+	&\ge -\eta_1\kappa_{\nabla^2f}g_{\Scal_k} \left\|d_{\Scal_{k+1}}\right\|_2^2- 2\(\eta_2+\frac{3\eta_1\eta_2}{2\sqrt{\gamma_{\nabla^2 c}}} +\frac{3\eta_1\eta_2}{2} g_{\Scal_{k}}\)g_{\Scal_{k}}\|d_{\Scal_{k+1}}\|_2^2\\
+	&\hspace{2em}-\(\kappa_{\nabla^2f}+\frac{\eta_2}{\sqrt{\gamma_{\nabla^2 c}}}\)2\eta_1 g_{\Scal_{k}}\|d_{\Scal_{k+1}}\|_2^2\\
+	&= -\(\(3\eta_1 \kappa_{\nabla^2f}+2\eta_2+\frac{5\eta_1\eta_2}{\sqrt{\gamma_{\nabla^2 c}}} \)g_{\Scal_k} +3\eta_1\eta_2g_{\Scal_k} ^2  \) \left\|d_{\Scal_{k+1}}\right\|_2^2\\
 	&\ge -\(2\eta_3g_{\Scal_k} +3\eta_1\eta_2g_{\Scal_k} ^2  \)\left\|d_{\Scal_{k+1}}\right\|_2^2.
 	\ealigned
 \eequationNN
