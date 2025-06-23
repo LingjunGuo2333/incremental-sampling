@@ -5,10 +5,9 @@ function [info, variables] = sqp_bt(P, params)
     S_set = params.S_set;
     output_dir = params.dir;
     show_y          = [];
-    kiter           = 1;
     ekkt_res_list   = [];
     g_eval_list     = [];
-    checkpoint      = params.checkpoint;
+    checkpoint      = 1;
     % output file and detials
     file_name = append(output_dir,'/S=', string(length(S_set)));
     write_head(file_name,length(S_set),params.eps)
@@ -31,7 +30,7 @@ function [info, variables] = sqp_bt(P, params)
     JJT_inv         = norm(Jx)^(-2);
     Jg              = Jx*gx;
     y               = -JJT_inv*Jg+JJT_inv*cx;
-    if params.accelerate
+    if params.adaconstraint
         g_k_bar     = gx - JJT_inv*Jg*Jx';
         p_k         = params.beta_1*p_k_1 + (1-params.beta_1)*g_k_bar;
         q_k         = params.beta_2*q_k_1 + (1-params.beta_2)*g_k_bar.^2;
@@ -157,11 +156,12 @@ function [info, variables] = sqp_bt(P, params)
                         merit, e_merit, ...
                         merit-e_merit,rk, fx, norm(cx,'Inf'), norm(ecx,'Inf'), ...
                         norm(cx,'Inf')-norm(ecx,'Inf'),tau);
-        if params.iter_plot
-            if ~mod(iter,checkpoint)
+
+        if params.iter_plot && length(params.S_set) == params.N
+            if ekkt_res < 10^(-checkpoint)
                 pred   = forward(P.network, P.validation_ins); 
-                show_y(kiter,:) = pred;
-                kiter = kiter+1;
+                show_y(checkpoint,:) = pred;
+                checkpoint = checkpoint+1;
             end
         end
         
