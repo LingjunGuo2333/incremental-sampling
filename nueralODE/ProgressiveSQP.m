@@ -1,6 +1,6 @@
 %% problem path and output folder
 clear
-platform = 'online';
+platform = 'local';
 if strcmp(platform, 'local')
     location = '/Users/a329301/MatlabDrive';
 elseif strcmp(platform, 'online')
@@ -12,34 +12,29 @@ ouput_dir   = append(dir,'/progress_result/', string(datetime));
 cd(dir); mkdir(ouput_dir);
 %% parameters for subproblem solver
 rng(23)
-v=load('params.mat');
-params = v.params; 
-clear v;
 params.tau     = .1;    
 params.sigma   = .5;    params.eta           = 1e-4;
 params.nu      = .5;    params.alpha         = 1;
 params.max_backtrack = 20;
 
 input_size = 1;
-params.backtrack = 1;
 params.lr = 1e-6;
-params.accelerate = 0;
-params.beta_1 = 0.9;  params.beta_2 = 0.999; params.alg_mu= 1e-7;
-params.normalize_obj_input  = 0;
-params.normalize_cos_input  = 1;
+params.adaconstraint = 0;
+params.beta_1 = 0.9;  params.beta_2 = 0.999; params.alg_mu= 1e-7; % parameters for adaconstraint
+params.normalize_obj_input  = 1;
+params.normalize_cos_input  = 0;
 params.plot             = 1;
 params.dir              = ouput_dir;
 params.iter_plot        = 1;
 params.maxit            = 2e4;   
-params.checkpoint       = 1e3;
-params.N                = 512;
+params.N                = 512; % defaul 512
 
 T                       = 5;              % time span
-n_obj_sample            = 5e1;         % number of samples in the objective 
+n_obj_sample            = 51;         % number of samples in the objective 
 N                       = params.N;        % number of samples for constraints
 p_1                     = N ;             % 5e1   ; tune on p_1 for the best one
 
-exit_tol                = 1e-5;     %1e-6 different bar plot 1e-3 to 1e-5
+exit_tol                = 1e-3;        
 exit_coeff              = exit_tol/(sqrt(N/(N-1)^2)); 
 feps                    = @ (S) exit_coeff*((sqrt(N*(N - S)/S^2))*(S~=N) ...
                             +  (sqrt(N/(N-1)^2))*(S==N));
@@ -49,14 +44,14 @@ if input_size == 1
     full_sample_shuffled   = randperm(N);
     obj_ins                = 0:5/(n_obj_sample-1):5 ;
     obj_outs               = ySol(obj_ins(1,:)); 
-    cons_ins_full          = 0: T/(N-1): T ; 
+    cons_ins_full          = 0: T/N: T/N*(N-1) ; 
     vali_ins               = 0: T/(1e3-1): T ;
 elseif input_size == 3
     obj_ins                = [   0:5/(n_obj_sample-1):5 ; ... 
                                   ones(1, n_obj_sample) ; ...
                                  zeros(1, n_obj_sample)];
     obj_outs               = ySol(obj_ins(1,:)); 
-    cons_ins_full          = [0: T/(N-1): T ; ...
+    cons_ins_full          = [0: T/N: T/N*(N-1) ; ...
                                   ones(1, N) ; ...
                                  zeros(1, N)];
     vali_ins               = [0: T/(1e3-1): T ; ...
@@ -81,13 +76,11 @@ if params.normalize_cos_input
     end
 end
 %% set neural network
-coeffs = [1, 0.1, 1]; % mass balance coefficients
-% coeffs = [1, 0.5, 25]; % mass balance coefficients
+coeffs = [1, 0.1, 1]; % mass balance coefficients; possibly need to check learnODE.m if length(coeffs)>3.
 % Declare problem
 P = learnODE(obj_ins, obj_outs, coeffs, cons_ins_full, vali_ins);
 x0          = P.x_last; 
 x1          = (rand(length(x0),1)-0.5);
-% x1          = normrnd(0,1,size(x0));
 P.updateNetworkVariables(x1);
 P.x_last    = x1;
 clear x0
