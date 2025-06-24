@@ -15,31 +15,31 @@ classdef learnODE < Problem
     n_hidden_nodes  % number of nodes in each hidden layer
     n_outputs       % number of outputs
     n_samples_obj   % number of samples for objective
-    n_samples_con_full   % number of samples for constraints
+    n_samples_con_full   % number of samples of constraints, for current subproblem(not neccessarily full sample)
     n_variables     % number of variables (learnable network values)
     outputs         % data outputs
     x_last          % last primal variable
     x_table         % table of variables
     ode_obj_weight  % weight for ode loss in the objective function
-    validation_ins
+    validation_ins  % input for validation(testing) 
   end
 
   % Methods
   methods (Access = public)
 
     % Constructor
-    function self = learnODE(ins,outs,coeffs,full_cons_ins,validation_ins)
+    function self = learnODE(obj_ins,obj_outs,mass_coeffs,full_cons_ins,validation_ins)
 
       % Set data
-      self.inputs_obj       = dlarray(ins,'CB');
-      self.outputs          = dlarray(outs,'CB');
-      self.mass_coeffs      = coeffs;
+      self.inputs_obj       = dlarray(obj_ins,'CB');
+      self.outputs          = dlarray(obj_outs,'CB');
+      self.mass_coeffs      = mass_coeffs;
       self.ode_obj_weight   = 0;
 
       % Set number of features and outputs
-      self.n_features       = size(ins,1);
-      self.n_outputs        = size(outs,1);
-      self.n_samples_obj    = size(outs,2);
+      self.n_features       = size(obj_ins,1);
+      self.n_outputs        = size(obj_outs,1);
+      self.n_samples_obj    = size(obj_outs,2);
 
       % Set constraint data
       self.n_samples_con_full    = size(full_cons_ins, 2);
@@ -51,9 +51,9 @@ classdef learnODE < Problem
       self.batch_counter = -1;
 
       % Set hidden layer sizes
-      self.n_hidden_layers = 4; %6
+      self.n_hidden_layers = 4;  
       for i = 1:self.n_hidden_layers
-        self.n_hidden_nodes(i) = 96; % 128
+        self.n_hidden_nodes(i) = 96;  
       end
 
       % Set number of optimization variables
@@ -63,8 +63,7 @@ classdef learnODE < Problem
       end
      
       self.n_variables = self.n_variables + self.n_hidden_nodes(end) * self.n_outputs + self.n_outputs ;
-      % CHANGED +2
-      % self.n_variables =self.n_variables +2;
+      
       % Set weight and bias terms
       W{1} = zeros(self.n_hidden_nodes(1),self.n_features);
       b{1} = zeros(self.n_hidden_nodes(1),1);
@@ -75,9 +74,6 @@ classdef learnODE < Problem
       W{self.n_hidden_layers+1} = zeros(self.n_outputs,self.n_hidden_nodes(end));
       b{self.n_hidden_layers+1} = zeros(self.n_outputs,1);
 
-      % add one connected 1 by 1 layer CHANGED
-      % W{self.n_hidden_layers+2} = zeros(self.n_outputs,self.n_outputs);
-      % b{self.n_hidden_layers+2} = zeros(self.n_outputs,1);
       % Initialize neural network
       self.network = initializeNeuralNetwork(self, W, b);
 
@@ -111,10 +107,7 @@ classdef learnODE < Problem
       % Set output layer
       layers = [layers
                 fullyConnectedLayer(self.n_outputs,  'Name', 'layer', 'Weights', W{self.n_hidden_layers+1}, 'Bias', b{self.n_hidden_layers+1})];
-      % CHANGED  
-      % layers = [layers
-                % fullyConnectedLayer(self.n_outputs,  'Name', 'layer', 'Weights', W{self.n_hidden_layers+2}, 'Bias', b{self.n_hidden_layers+2})];
-      % Create neural network
+      
       network = dlnetwork(layers);
 
     end % initializeNeuralNetwork
@@ -216,15 +209,20 @@ classdef learnODE < Problem
       Y = forward(network, inputs);
       times = inputs(1,:);
       % Evaluate gradient with respect to outputs
-      gradY = dlarray(zeros(self.n_outputs,size(inputs, 2)),'CB');
-      HessY = dlarray(zeros(self.n_outputs,size(inputs, 2)),'CB');
+      gradY = dlarray(zeros(self.n_outputs, size(inputs, 2)),'CB');
+      HessY = dlarray(zeros(self.n_outputs, size(inputs, 2)),'CB');
       for i = 1:self.n_outputs
         gradY(i,:) = dlgradient(sum(Y(i,:)),times,EnableHigherDerivatives=true);
       end
       for i = 1:self.n_outputs
         HessY(i,:) = dlgradient(sum(gradY(i,:)),times,EnableHigherDerivatives=true);
       end
-      
+      cEdl = [];
+      for i = 1:self.n_outputs
+        cEdl = [cEdl; sum((self.mass_coeffs(1)*HessY(i,:)+self.mass_coeffs(2)*gradY(i,:)+self.mass_coeffs(3)*Y(i,:))/length(times))];
+      end
+
+      %{
       Hess_grad_Y = [HessY; gradY; Y];
       % Evaluate mass balance coefficients times derivatives
       CgradY = fullyconnect(Hess_grad_Y, self.mass_coeffs, zeros(1,1));
@@ -236,11 +234,14 @@ classdef learnODE < Problem
       for i = 1:self.n_outputs
         cEdl = [cEdl; sum(CgradY(i,:))^order/length(times)];
       end
-      
+      %}
+
       % Evaluate Jacobian
       for i = 1:self.n_outputs
         JEdl{i} = dlgradient(cEdl(i),network.Learnables);
       end
+      
+
       % Evaluate constraint value
       cE = double(extractdata(cEdl));
 
@@ -341,9 +342,7 @@ classdef learnODE < Problem
       end
 
     end
-    
 
-    %% not used
     % Initial point
     function x = initialPoint(self)
 
@@ -353,35 +352,6 @@ classdef learnODE < Problem
       x = x_best;
 
     end % initialPoint
-
-    % Evaluate constraint mse loss for full sample
-    function [odef, odeg] = ConstraintMSELossFullSample(self,network,inputs)
-
-      % Evaluate forward pass for initial time
-      Y = forward(network, inputs);
-
-      % Evaluate gradient with respect to outputs
-      gradY = dlarray(zeros(self.n_outputs,size(inputs, 2)),'CB');
-      HessY = dlarray(zeros(self.n_outputs,size(inputs, 2)),'CB');
-      for i = 1:self.n_outputs
-        gradY(i,:) = dlgradient(sum(Y(i,:)),times,EnableHigherDerivatives=true);
-      end
-      for i = 1:self.n_outputs
-        HessY(i,:) = dlgradient(sum(gradY(i,:)),times,EnableHigherDerivatives=true);
-      end
-      
-      Hess_grad_Y = [HessY; gradY; Y];
-      % Evaluate mass balance coefficients times derivatives
-      CgradYdl = fullyconnect(Hess_grad_Y, self.mass_coeffs, zeros(1,1));
-      
-      odef = mse(CgradYdl, zeros(size(CgradYdl)));
-      odeg = dlgradient(odef,network.Learnables);
-      
-      % Set function value
-      odef = double(extractdata(odef));
-      % Set gradient value
-      odeg = double(self.flattenGradient(odeg));
-    end
 
     % Name
     function s = name(self)
